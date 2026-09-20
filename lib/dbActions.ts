@@ -1,12 +1,13 @@
 // lib/dbActions.ts
 import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth"; // User型を追加インポート
 import { doc, getDoc, DocumentData } from "firebase/firestore";
 
 /**
  * 現在のログインユーザーを取得する（認証完了まで待機するヘルパー関数）
  */
-const getCurrentUser = () => {
+// Promiseの戻り値の型として <User | null> を指定
+const getCurrentUser = (): Promise<User | null> => {
   return new Promise((resolve, reject) => {
     const unsubscribe = onAuthStateChanged(
       auth,
@@ -25,7 +26,8 @@ const getCurrentUser = () => {
  */
 export async function getUserData(): Promise<DocumentData | null> {
   try {
-    const user: any = await getCurrentUser();
+    // any を削除（getCurrentUser の型定義により自動で User | null として認識されます）
+    const user = await getCurrentUser();
     
     // 未ログインの場合はnullを返す
     if (!user) return null;

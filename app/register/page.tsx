@@ -60,7 +60,7 @@ export default function RegisterPage() {
 
       const nickNameMap: Record<string, number[]> = {};
       nicknames.forEach((name) => {
-        nickNameMap[name.trim()] = [0, 0, 0, 0, 0, 0];
+        nickNameMap[name.trim()] = [0, 0, 0, 0, 0];
       });
 
       // ▼ ここで dev: 0 を追加しています
@@ -69,6 +69,7 @@ export default function RegisterPage() {
         nickName: nickNameMap,
         orderedNames: nicknames.map(name => name.trim()),
         dev: 0, 
+        scannedQRs: [0, 0, 0, 0, 0, 0],
         createdAt: new Date(),
       });
 
