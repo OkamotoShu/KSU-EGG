@@ -4,7 +4,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { Header } from "@/components/header";
 
@@ -17,7 +17,7 @@ function EventContent() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [question, setQuestion] = useState("");
   const [choices, setChoices] = useState<string[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
 
   // ▼ 複数人プレイ・たまご情報更新用のステート
   const [nicknames, setNicknames] = useState<string[]>([]);
@@ -31,7 +31,7 @@ function EventContent() {
       return;
     }
 
-    const fetchEventData = async (user: any) => {
+    const fetchEventData = async (user: User) => {
       try {
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);

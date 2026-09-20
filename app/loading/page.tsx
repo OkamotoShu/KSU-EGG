@@ -4,8 +4,8 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore"; // updateDocを削除
+import { onAuthStateChanged, User } from "firebase/auth"; // ▼ User型を追加
+import { doc, getDoc } from "firebase/firestore";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 
@@ -26,12 +26,15 @@ function LoadingContent() {
 
     const qrIndex = parseInt(qrIdParam, 10);
     if (isNaN(qrIndex) || qrIndex < 0 || qrIndex > 5) {
-      setHasError(true);
-      setStatusMessage("無効なQRコードです。");
+      setTimeout(() => {
+        setHasError(true);
+        setStatusMessage("無効なQRコードです。");
+      }, 0);
       return;
     }
 
-    const processQR = async (user: any) => {
+    // ▼ user: any を user: User に変更
+    const processQR = async (user: User) => {
       try {
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
@@ -41,7 +44,6 @@ function LoadingContent() {
           const scannedQRs = data.scannedQRs || [0, 0, 0, 0, 0, 0];
 
           if (scannedQRs[qrIndex] === 0) {
-            // ▼ 更新処理を削除し、遷移だけを行うように変更
             setStatusMessage("読み取り完了！イベントへ移動します...");
             setTimeout(() => {
               router.push(`/event?qrId=${qrIndex}`);
