@@ -44,10 +44,17 @@ function LoadingContent() {
           const scannedQRs = data.scannedQRs || [0, 0, 0, 0, 0, 0];
 
           if (scannedQRs[qrIndex] === 0) {
-            setStatusMessage("読み取り完了！イベントへ移動します...");
-            setTimeout(() => {
-              router.push(`/event?qrId=${qrIndex}`);
-            }, 1000);
+            if (qrIndex === 5) {
+              setStatusMessage("ゴール地点をはっけん！");
+              setTimeout(() => {
+                router.push("/hatch");
+              }, 1000);
+            } else {
+              setStatusMessage("読み取り完了！イベントへ移動します...");
+              setTimeout(() => {
+                router.push(`/event?qrId=${qrIndex}`);
+              }, 1000);
+            }
           } else {
             setIsAlreadyScanned(true);
             setStatusMessage("この場所はすでに読み取り済みです！");

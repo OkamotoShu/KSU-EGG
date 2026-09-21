@@ -13,8 +13,8 @@ export default function Home() {
   const router = useRouter();
   
   const [nicknames, setNicknames] = useState<string[]>([]);
-  // ▼ 追加: 全員のたまご情報を保持するステート
   const [eggDataMap, setEggDataMap] = useState<Record<string, number[]>>({});
+  const [scannedQRs, setScannedQRs] = useState<number[]>([0, 0, 0, 0, 0, 0]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,6 +26,7 @@ export default function Home() {
         setNicknames(data.orderedNames || Object.keys(data.nickName));
         // ▼ 取得したデータをそのまま保存
         setEggDataMap(data.nickName);
+        setScannedQRs(data.scannedQRs || [0, 0, 0, 0, 0, 0]);
       } else {
         router.push("/register");
       }
@@ -47,67 +48,6 @@ export default function Home() {
     }
   };
 
-  // if (isLoading) {
-  //   return (
-  //     <div className="flex min-h-dvh items-center justify-center bg-gray-50">
-  //       <p className="text-gray-500">データを読み込み中...</p>
-  //     </div>
-  //   );
-  // }
-
-  // const currentName = nicknames[currentIndex] || "プレイヤー";
-  
-  // // ▼ 変更: 現在表示しているプレイヤーのたまご情報（配列）を取得
-  // // 万が一データがない場合は初期値 [0, 0, 0, 0, 0, 0] を使う
-  // const currentEggData = eggDataMap[currentName] || [0, 0, 0, 0, 0, 0];
-  
-  // // 0番目と1番目の要素を取り出して画像パスを動的に生成
-  // const trait1 = currentEggData[0]; //たまごのタイプ
-  // const trait2 = currentEggData[1]; //巣の種類
-  // const trait3 = currentEggData[2]; //たまごの色
-  // const trait4 = currentEggData[3]; //たまごの模様
-  // const trait5 = currentEggData[4]; //ヒビ(中から覗く)
-  // const eggSrc = `/egg_${trait1}_${trait3}.png`;
-
-  // return (
-  //   <>
-  //     <Header />
-      
-  //     <main className="flex min-h-dvh flex-col items-center justify-center pt-20 pb-24 px-4 bg-gray-50">
-  //       <div className="mb-6 flex w-full max-w-sm items-center justify-between">
-          
-  //         {currentIndex > 0 ? (
-  //           <button
-  //             onClick={handlePrev}
-  //             className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow hover:bg-gray-100 active:scale-95"
-  //           >
-  //             <ChevronLeft className="h-6 w-6 text-gray-700" />
-  //           </button>
-  //         ) : (
-  //           <div className="w-10" />
-  //         )}
-
-  //         <h1 className="text-2xl font-bold tracking-wider text-gray-800">
-  //           {currentName}のたまご
-  //         </h1>
-
-  //         {currentIndex < nicknames.length - 1 ? (
-  //           <button
-  //             onClick={handleNext}
-  //             className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow hover:bg-gray-100 active:scale-95"
-  //           >
-  //             <ChevronRight className="h-6 w-6 text-gray-700" />
-  //           </button>
-  //         ) : (
-  //           <div className="w-10" />
-  //         )}
-  //       </div>
-
-  //       <div className="rounded-full bg-white p-6 shadow-lg">
-  //         {/* 生成した画像パスを渡す */}
-  //         <EggDisplay imageSrc={eggSrc} />
-  //       </div>
-
   if (isLoading) {
     return (
       <div className="flex min-h-dvh items-center justify-center bg-gray-50">
@@ -124,9 +64,19 @@ export default function Home() {
   const traitEggType = currentEggData[0]; // 1箇所目: たまごのタイプ
   const traitNest    = currentEggData[1]; // 2箇所目: 巣のタイプ
   const traitColor   = currentEggData[2]; // 3箇所目: たまごの色
-  
+  const traitPattern   = currentEggData[3]; // 3箇所目: たまごの色
+
+  const isHatched = scannedQRs[5] === 1;
   const eggSrc = `/egg_${traitEggType}_${traitColor}.png`;
-  const nestSrc = `/nest_${traitNest}.png`;
+  const monsterSrc = `/monster_${traitEggType}_${traitColor}.png`;
+  const nestSrc = isHatched 
+    ? "/nest_0.png" 
+    : `/nest_${traitNest}.png`;
+  const patternSrc = isHatched 
+    ? "/pattern_0.png" 
+    : `/pattern_${traitPattern}.png`;
+
+  const placeholderText = isHatched ? `[孵化後]\n${monsterSrc}` : undefined;
 
   return (
     <>
@@ -169,7 +119,12 @@ export default function Home() {
           {/* ▼ h-full と aspect-square で、高さの限界まで広がる完全な「円」を作る */}
           {/* max-w-full によって、横幅が足りないスマホでは横幅に合わせて円が縮みます */}
           <div className="flex aspect-square h-full max-h-[380px] max-w-full items-center justify-center rounded-full bg-white shadow-xl">
-            <EggDisplay eggSrc={eggSrc} nestSrc={nestSrc} />
+            <EggDisplay 
+              eggSrc={eggSrc} 
+              nestSrc={nestSrc} 
+              patternSrc={patternSrc} 
+              placeholderText={placeholderText}
+            />
           </div>
         </div>
 
