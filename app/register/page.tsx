@@ -7,6 +7,7 @@ import { auth, db } from "@/lib/firebase";
 import { signInAnonymously } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { Header } from "@/components/header";
+import { postCollectionInLogs } from "@/lib/dbActions";
 
 export default function RegisterPage() {
   const [playerCount, setPlayerCount] = useState<number>(1);
@@ -73,8 +74,11 @@ export default function RegisterPage() {
         createdAt: new Date(),
       });
 
+      await postCollectionInLogs("アプリ登録", "登録画面", "成功");
+
       router.push("/");
     } catch (error) {
+      await postCollectionInLogs("アプリ登録", "登録画面", `失敗: ${error}`);
       console.error("登録エラー:", error);
       alert("登録に失敗しました。もう一度お試しください。");
     } finally {

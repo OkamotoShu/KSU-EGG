@@ -6,6 +6,9 @@ import { useRouter } from "next/navigation";
 import { useZxing } from "react-zxing";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { postCollectionInLogs } from "@/lib/dbActions";
+import { db } from "@/lib/firebase";
+import { collection, query, where, getDocs } from "firebase/firestore";
 
 export default function QRReaderPage() {
   const router = useRouter();
@@ -13,46 +16,75 @@ export default function QRReaderPage() {
   const [errorMsg, setErrorMsg] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // ▼ react-zxing を使ったカメラ起動と読み取り処理
+  // ▼ 変更: async を追加してログ送信を待てるようにする
   const { ref } = useZxing({
-    onDecodeResult(result) {
-      if (isProcessing) return; // 連続読み取りを防止
+    async onDecodeResult(result) {
+      if (isProcessing) return;
       setIsProcessing(true);
       
       const text = result.rawValue;
-      
-      // QRコードのURLから qrId= の数字を抽出（例: https://.../loading?qrId=1）
-      // ※もしQRの中身がURLではなくただの数字(1など)の場合は、そのまま取得
       const match = text.match(/qrId=(\d+)/);
       const qrId = match ? match[1] : text;
 
       if (!isNaN(parseInt(qrId, 10))) {
+        // ▼ ログ追加: QR読み取り成功
+        await postCollectionInLogs("QR読み取り", `qrId: ${qrId}`, "成功");
         router.push(`/loading?qrId=${qrId}`);
       } else {
-        // 想定外のQRコードだった場合の処理
+        // ▼ ログ追加: 不正なQRコード
+        await postCollectionInLogs("QR読み取り", `不正な値: ${text}`, "失敗");
         window.location.href = text; 
       }
     },
     onError(error) {
-      // 読み取り中（QRが見つからない間）は常にエラーが出続ける仕様なので、ここは空でOKです
+      // エラーハンドリング（空でOK）
     },
   });
 
-  // ▼ パスワード手入力の場合の処理（既存のロジックに合わせて適宜変更してください）
-  const handlePasswordSubmit = () => {
-    // 例: "egg1" と入力されたら qrId=0 として扱う、などのロジック
-    // ここではシンプルに、入力された数字をそのままqrIdとして遷移する例にしています
-    if (password.trim() === "") {
+  // ▼ パスワード手入力の処理
+  const handlePasswordSubmit = async () => {
+    const inputPass = password.trim();
+
+    if (inputPass === "") {
       setErrorMsg("パスワードを入力してください");
       return;
     }
-    
-    // （※ここにFirestoreのQRコレクションと照合する処理を入れてもOKです）
-    const dummyQrId = parseInt(password, 10);
-    if (!isNaN(dummyQrId) && dummyQrId >= 0 && dummyQrId <= 5) {
-      router.push(`/loading?qrId=${dummyQrId}`);
-    } else {
-      setErrorMsg("正しいパスワードを入力してください");
+
+    try {
+      // QRコレクションの中から、passwordフィールドが入力値と一致するものを検索
+      const q = query(collection(db, "QR"), where("password", "==", inputPass));
+      const querySnapshot = await getDocs(q);
+
+      if (!querySnapshot.empty) {
+        // 一致するドキュメントが見つかった場合
+        const matchedDoc = querySnapshot.docs[0];
+        
+        // ▼ 変更: ドキュメントIDそのものを qr_id として取得し、数値化する
+        const qrId = parseInt(matchedDoc.id, 10);
+
+        if (!isNaN(qrId) && qrId >= 0 && qrId <= 5) {
+          // 成功時の処理とログ保存
+          try {
+            await postCollectionInLogs("パスワード入力", qrId.toString(), "成功");
+          } catch (e) {
+            console.error("ログ保存エラー:", e);
+          }
+          router.push(`/loading?qrId=${qrId}`);
+        } else {
+          setErrorMsg("QRデータの設定に問題があります");
+        }
+      } else {
+        // 一致するドキュメントが無かった（パスワード間違い）場合
+        setErrorMsg("正しいパスワードを入力してください");
+        try {
+          await postCollectionInLogs("パスワード入力", inputPass, "失敗");
+        } catch (e) {
+          console.error("ログ保存エラー:", e);
+        }
+      }
+    } catch (error) {
+      console.error("パスワード検索エラー:", error);
+      setErrorMsg("通信エラーが発生しました");
     }
   };
 
@@ -62,7 +94,6 @@ export default function QRReaderPage() {
       <main className="flex min-h-dvh flex-col items-center bg-gray-50 pt-20 pb-24 px-4">
         <h1 className="mb-6 text-xl font-bold text-gray-800">QRコードを読み取ろう！</h1>
         
-        {/* ▼ カメラ映像の表示領域 */}
         <div className="mb-8 w-full max-w-sm overflow-hidden rounded-2xl bg-black shadow-lg">
           <video 
             ref={ref} 

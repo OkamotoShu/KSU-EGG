@@ -8,6 +8,7 @@ import { Footer } from "@/components/footer";
 import { EggDisplay } from "@/components/egg_display";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { getUserData } from "@/lib/dbActions";
+import { TutorialModal } from "@/components/tutorial_modal";
 
 export default function Home() {
   const router = useRouter();
@@ -17,6 +18,12 @@ export default function Home() {
   const [scannedQRs, setScannedQRs] = useState<number[]>([0, 0, 0, 0, 0, 0]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  const closeTutorial = () => {
+    localStorage.setItem("tutorialSeen", "true");
+    setShowTutorial(false);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,6 +34,9 @@ export default function Home() {
         // ▼ 取得したデータをそのまま保存
         setEggDataMap(data.nickName);
         setScannedQRs(data.scannedQRs || [0, 0, 0, 0, 0, 0]);
+        if (!localStorage.getItem("tutorialSeen")) {
+          setShowTutorial(true);
+        }
       } else {
         router.push("/register");
       }
@@ -143,6 +153,7 @@ export default function Home() {
       </main>
 
       <Footer />
+      {showTutorial && <TutorialModal onClose={closeTutorial} />}
     </>
   );
 }
