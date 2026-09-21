@@ -1,7 +1,7 @@
 // lib/dbActions.ts
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth"; // User型を追加インポート
-import { doc, getDoc, DocumentData } from "firebase/firestore";
+import { doc, getDoc, DocumentData, collection, addDoc } from "firebase/firestore";
 
 /**
  * 現在のログインユーザーを取得する（認証完了まで待機するヘルパー関数）
@@ -44,5 +44,40 @@ export async function getUserData(): Promise<DocumentData | null> {
   } catch (error) {
     console.error("ユーザーデータの取得に失敗しました:", error);
     return null;
+  }
+}
+
+// ▼ 追加: ログを保存する関数
+export async function postCollectionInLogs(
+  title: string,
+  place: string,
+  state: string
+) {
+  try {
+    const user = await getCurrentUser();
+    
+    if (!user) {
+      throw new Error("ログインしてください");
+    }
+    
+    const logData = {
+      title: title,
+      place: place,
+      state: state,
+      date: new Date(),
+      uid: user.uid,
+    };
+    
+    const logsRef = collection(db, "logs");
+    await addDoc(logsRef, logData);
+    
+  } catch (error) { // ◀︎ any を削除
+    console.error("ログの保存に失敗しました:", error);
+    
+    // ▼ 変更: エラーが Error オブジェクトかどうかを判定して安全にメッセージを取り出す
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    }
+    throw new Error("ログの保存中に不明なエラーが発生しました");
   }
 }
