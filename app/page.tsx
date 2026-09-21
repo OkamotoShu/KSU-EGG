@@ -67,16 +67,16 @@ export default function Home() {
   const traitPattern   = currentEggData[3]; // 3箇所目: たまごの色
 
   const isHatched = scannedQRs[5] === 1;
-  const eggSrc = `/egg_${traitEggType}_${traitColor}.png`;
-  const monsterSrc = `/monster_${traitEggType}_${traitColor}.png`;
+  const monsterSrc = `/monster_${traitEggType}_${traitNest}_${traitColor}_0.png`;
+  const eggSrc = isHatched 
+    ? monsterSrc 
+    : `/egg_${traitEggType}_${traitColor}.png`;
   const nestSrc = isHatched 
     ? "/nest_0.png" 
     : `/nest_${traitNest}.png`;
   const patternSrc = isHatched 
     ? "/pattern_0.png" 
     : `/pattern_${traitPattern}.png`;
-
-  const placeholderText = isHatched ? `[孵化後]\n${monsterSrc}` : undefined;
 
   return (
     <>
@@ -123,7 +123,6 @@ export default function Home() {
               eggSrc={eggSrc} 
               nestSrc={nestSrc} 
               patternSrc={patternSrc} 
-              placeholderText={placeholderText}
             />
           </div>
         </div>

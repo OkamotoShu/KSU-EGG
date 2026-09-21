@@ -5,10 +5,9 @@ interface EggDisplayProps {
   eggSrc: string;
   nestSrc: string;
   patternSrc: string;
-  placeholderText?: string; // ▼ 追加: 仮表示用のテキスト（オプション）
 }
 
-export function EggDisplay({ eggSrc, nestSrc, patternSrc, placeholderText }: EggDisplayProps) {
+export function EggDisplay({ eggSrc, nestSrc, patternSrc }: EggDisplayProps) {
   const showNest = !nestSrc.includes("nest_0");
   const showPattern = !patternSrc.includes("pattern_0");
 
@@ -24,31 +23,25 @@ export function EggDisplay({ eggSrc, nestSrc, patternSrc, placeholderText }: Egg
         />
       )}
       
-      {/* たまご・模様・仮テキストを配置するコンテナ */}
+      {/* たまご・模様を配置するコンテナ */}
       <div
         className={`relative z-10 h-[80%] w-[80%] flex justify-center items-center ${
           showNest ? "mb-[20%]" : "mb-[5%]" 
         }`}
       >
-        {/* ▼ 変更: テキストが指定されていればテキスト枠を、無ければ画像を出す */}
-        {placeholderText ? (
-          <div className="flex h-[80%] w-[80%] items-center justify-center rounded-2xl bg-gray-200 bg-opacity-90 p-4 text-center text-sm font-bold text-gray-600 shadow-inner whitespace-pre-wrap">
-            {placeholderText}
-          </div>
-        ) : (
-          <img
-            src={eggSrc}
-            alt="たまご"
-            className="h-full w-full object-contain drop-shadow-md"
-          />
-        )}
+        {/* たまご（またはモンスター）本体 */}
+        <img
+          src={eggSrc}
+          alt="キャラクター"
+          className="h-full w-full object-contain drop-shadow-md"
+        />
         
-        {/* 模様（たまごの前面 z-20） */}
-        {showPattern && !placeholderText && ( // 仮表示のときは模様も出さない
+        {/* 模様（前面 z-20） */}
+        {showPattern && (
           <img
             src={patternSrc}
-            alt="たまごの模様"
-            className="absolute inset-0 m-auto z-20 h-[75%] w-[75%] object-contain"
+            alt="模様"
+            className="absolute inset-0 m-auto z-20 h-[90%] w-[90%] object-contain"
           />
         )}
       </div>

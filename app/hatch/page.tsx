@@ -114,11 +114,11 @@ export default function HatchPage() {
   const currentName = nicknames[currentPlayerIndex];
   const currentEggData = eggDataMap[currentName] || [0, 0, 0, 0];
   
+  const monsterSrc = `/monster_${currentEggData[0]}_${currentEggData[1]}_${currentEggData[2]}_0.png`;
   const eggSrc = `/egg_${currentEggData[0]}_${currentEggData[2]}.png`;
+  const displaySrc = tapCount >= 10 ? monsterSrc : eggSrc;
   const nestSrc = `/nest_${currentEggData[1]}.png`;
   const patternSrc = `/pattern_${currentEggData[3]}.png`;
-  const monsterSrc = `/monster_${currentEggData[0]}_${currentEggData[2]}.png`;
-  const placeholderText = tapCount >= 10 ? `[孵化後]\n${monsterSrc}` : undefined;
 
   // ▼ 変更点：三項演算子を使わず、未制覇かつ未確認の場合はこの画面を返す
   if (!isAllScanned && !isConfirmed) {
@@ -182,12 +182,7 @@ export default function HatchPage() {
           >
             {/* 10回タップしたらヒビ割れ画像を被せる等の演出ができます */}
             <div className={`h-full w-full transition-opacity duration-300 ${tapCount >= 10 ? "opacity-50 blur-sm" : ""}`}>
-              <EggDisplay 
-                eggSrc={eggSrc} 
-                nestSrc={nestSrc} 
-                patternSrc={patternSrc} 
-                placeholderText={placeholderText} 
-              />
+              <EggDisplay eggSrc={displaySrc} nestSrc={nestSrc} patternSrc={patternSrc} />
             </div>
             
             {tapCount >= 10 && (
