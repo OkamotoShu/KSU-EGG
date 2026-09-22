@@ -9,8 +9,9 @@ import { doc, setDoc } from "firebase/firestore";
 import { Header } from "@/components/header";
 import { postCollectionInLogs } from "@/lib/dbActions";
 import { ChevronDown } from "lucide-react";
+import { EntryGuard } from "@/components/entry-guard";
 
-export default function RegisterPage() {
+function RegisterContent() {
   const [playerCount, setPlayerCount] = useState<number>(1);
   const [nicknames, setNicknames] = useState<string[]>([""]);
   const [isLoading, setIsLoading] = useState(false);
@@ -77,7 +78,7 @@ export default function RegisterPage() {
 
       await postCollectionInLogs("アプリ登録", "登録画面", "成功");
 
-      router.push("/");
+router.replace("/");
     } catch (error) {
       await postCollectionInLogs("アプリ登録", "登録画面", `失敗: ${error}`);
       console.error("登録エラー:", error);
@@ -226,5 +227,14 @@ export default function RegisterPage() {
         </div>
       </main>
     </>
+  );
+}
+
+// 登録済みの場合はフォームを表示しない
+export default function RegisterPage() {
+  return (
+    <EntryGuard page="register">
+      <RegisterContent />
+    </EntryGuard>
   );
 }
