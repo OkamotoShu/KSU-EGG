@@ -3,10 +3,27 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
+import { EntryGuard } from "@/components/entry-guard";
+import { acceptConsent } from "@/lib/consent";
 
-export default function ConsentPage() {
+function ConsentContent() {
     const router = useRouter();
     const [agreed, setAgreed] = useState(false);
+
+    // 同意を保存して登録画面へ進む
+    const handleAccept = () => {
+        if (!agreed) return;
+
+        try {
+            acceptConsent();
+            router.replace("/register");
+        } catch (error) {
+            console.error("同意状態の保存に失敗しました:", error);
+            alert(
+                "同意状態を保存できませんでした。ブラウザーの保存設定を確認してください。"
+            );
+        }
+    };
 
     return (
         <>
@@ -106,7 +123,7 @@ export default function ConsentPage() {
                     <button
                         type="button"
                         disabled={!agreed}
-                        onClick={() => router.push("/register")}
+                        onClick={handleAccept}
                         className="min-h-11 rounded-full bg-[#FFBC39] px-6 py-2.5 text-sm font-extrabold text-[#18366B] transition-colors enabled:hover:bg-[#FFB020] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:cursor-not-allowed disabled:bg-[#E5E7EB] disabled:text-[#65748B]"
                     >
                         つづける
@@ -115,5 +132,14 @@ export default function ConsentPage() {
                 </div>
             </div>
         </>
+    );
+}
+
+// 同意済み・登録済みの場合は表示前に移動
+export default function ConsentPage() {
+    return (
+        <EntryGuard page="consent">
+            <ConsentContent />
+        </EntryGuard>
     );
 }
