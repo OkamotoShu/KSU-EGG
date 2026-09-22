@@ -15,7 +15,7 @@ export function EventImage({
   eventImageSrc: string;
 }) {
   return (
-    <div className="mb-6 relative mx-auto flex w-full max-w-[240px] justify-center">
+    <div className="relative mx-auto flex h-full w-full max-w-[240px] min-h-0 justify-center">
       {totalScans === 3 && (
         <img src={eggImagePath} alt="たまご" className="absolute inset-0 m-auto h-full w-full object-contain" />
       )}
@@ -25,7 +25,7 @@ export function EventImage({
           <img src={patternImagePath} alt="模様" className="absolute inset-0 m-auto h-full w-full object-contain" />
         </>
       )}
-      <img src={eventImageSrc} alt="イベント画像" className="relative z-10 w-full object-contain drop-shadow-md" />
+      <img src={eventImageSrc} alt="イベント画像" className="relative z-10 h-full w-full object-contain" />
     </div>
   );
 }
@@ -48,7 +48,7 @@ export function TitlePhase({
       </h1>
       <button
         onClick={onNext}
-        className="w-full rounded-xl bg-blue-600 px-4 py-4 font-bold text-white transition-colors hover:bg-blue-700 active:scale-95 shadow-md"
+        className="w-full rounded-xl bg-[#FFBC39] px-4 py-4 font-bold text-white transition-colors hover:bg-blue-700 active:scale-95 shadow-md"
       >
         次へ進む
       </button>
@@ -57,106 +57,257 @@ export function TitlePhase({
 }
 
 // ③ 質問画面コンポーネント
+// プレイヤーごとの回答画面
 export function QuestionPhase({
   nicknames,
   currentPlayerIndex,
   question,
   choices,
+  selectedAnswer,
+  isEditing,
+  isUpdating,
   onChoiceClick,
+  onPrevious,
+  onNext,
   children,
 }: {
   nicknames: string[];
   currentPlayerIndex: number;
   question: string;
   choices: string[];
-  onChoiceClick: (idx: number) => void;
+  selectedAnswer?: number;
+  isEditing: boolean;
+  isUpdating: boolean;
+  onChoiceClick: (index: number) => void;
+  onPrevious: () => void;
+  onNext: () => void;
   children: React.ReactNode;
 }) {
   const currentName = nicknames[currentPlayerIndex];
+  const isLastPlayer = currentPlayerIndex === nicknames.length - 1;
+
   return (
-    <div className="animate-in fade-in duration-300">
-      {nicknames.length > 1 && (
-        <p className="mb-2 text-center text-sm font-bold text-blue-500">
-          {currentPlayerIndex + 1} 人目 / {nicknames.length} 人中
+    <div className="flex h-full min-h-0 flex-col gap-3 text-[#18366B]">
+      {/* 現在のプレイヤー */}
+      <div
+        aria-live="polite"
+        aria-atomic="true"
+        className="shrink-0 text-center"
+      >
+        <p className="text-xs font-bold text-[#65748B]">
+          {currentPlayerIndex + 1}人目 / {nicknames.length}人
+          {isEditing && " · 回答を変更中"}
         </p>
-      )}
-      <h2 className="mb-4 text-center text-lg font-bold text-gray-700">
-        <span className="text-blue-600">{currentName}</span> のばん
-      </h2>
-      <div className="mb-6 h-px w-full bg-gray-200" />
-      {children}
-      <h1 className="mb-6 text-lg font-bold leading-relaxed text-gray-800">
-        {question}
-      </h1>
-      <div className="flex flex-col gap-4">
-        {choices.map((choiceText, idx) => (
-          <button
-            key={idx}
-            onClick={() => onChoiceClick(idx)}
-            className="rounded-xl border-2 border-blue-100 bg-blue-50 p-4 text-left font-bold text-blue-700 transition-colors hover:bg-blue-100 active:scale-95"
-          >
-            {choiceText}
-          </button>
-        ))}
+
+        <h2 className="mt-1 text-xl leading-snug font-extrabold [overflow-wrap:anywhere]">
+          {currentName}さんのばん
+        </h2>
+      </div>
+
+      {/* 空きスペースに応じて画像を伸縮 */}
+      <div className="flex min-h-0 flex-1 items-center justify-center overflow-hidden">
+        <div className="h-full max-h-[220px] w-full">
+          {children}
+        </div>
+      </div>
+
+      {/* 質問と選択肢 */}
+      <fieldset
+        disabled={isUpdating}
+        className="min-w-0 shrink-0"
+      >
+        <legend className="mb-3 w-full rounded-2xl bg-[#FFF0C2] px-4 py-3 text-base leading-snug font-extrabold">
+          {question}
+        </legend>
+
+        <div className="flex flex-col gap-2">
+          {choices.map((choiceText, index) => {
+            const selected = selectedAnswer === index + 1;
+
+            return (
+              <label
+                key={index}
+                className={`relative flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border-2 px-3 py-2.5 transition-colors ${selected
+                    ? "border-[#269D9C] bg-[#E4F2EE]"
+                    : "border-[#18366B]/10 bg-white"
+                  }`}
+              >
+                <input
+                  type="radio"
+                  name={`player-answer-${currentPlayerIndex}`}
+                  value={index + 1}
+                  checked={selected}
+                  onChange={() => onChoiceClick(index)}
+                  className="peer sr-only"
+                />
+
+                {/* キーボード操作時のフォーカス表示 */}
+                <span
+                  aria-hidden="true"
+                  className="pointer-events-none absolute inset-0 rounded-2xl peer-focus-visible:outline-2 peer-focus-visible:outline-[#18366B]"
+                />
+
+                <span
+                  aria-hidden="true"
+                  className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${selected
+                      ? "bg-[#18366B] text-white"
+                      : "bg-[#FFF0C2]"
+                    }`}
+                >
+                  {String.fromCharCode(65 + index)}
+                </span>
+
+                <span className="flex-1 text-sm leading-snug font-bold">
+                  {choiceText}
+                </span>
+
+                <span
+                  aria-hidden="true"
+                  className="w-4 shrink-0 font-bold"
+                >
+                  {selected ? "✓" : ""}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </fieldset>
+
+      {/* 操作ボタンを画面内の最下部に配置 */}
+      <div className="flex shrink-0 items-center gap-3 border-t border-[#18366B]/10 pt-3">
+        <button
+          type="button"
+          onClick={onPrevious}
+          disabled={isUpdating || currentPlayerIndex === 0}
+          className="min-h-12 shrink-0 rounded-xl px-3 text-sm font-bold focus-visible:outline-2 focus-visible:outline-[#18366B] disabled:opacity-30"
+        >
+          ← 前の人
+        </button>
+
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={isUpdating || !selectedAnswer}
+          className="min-h-12 flex-1 rounded-2xl bg-[#FFBC39] px-3 py-3 text-sm font-extrabold enabled:hover:bg-[#FFB020] focus-visible:outline-2 focus-visible:outline-[#18366B] disabled:bg-[#E5E7EB] disabled:text-[#65748B]"
+        >
+          {isEditing
+            ? "確認に戻る"
+            : isLastPlayer
+              ? "回答を確認する"
+              : "次の人へ →"}
+        </button>
       </div>
     </div>
   );
 }
 
 // ④ 確認画面コンポーネント
+// 全員の回答を確認し、必要な人だけ変更する
 export function ConfirmPhase({
   nicknames,
   tempAnswers,
   choices,
   isUpdating,
   onConfirmSave,
-  onRedo,
+  onEditPlayer,
 }: {
   nicknames: string[];
   tempAnswers: Record<string, number>;
   choices: string[];
   isUpdating: boolean;
   onConfirmSave: () => void;
-  onRedo: () => void;
+  onEditPlayer: (index: number) => void;
 }) {
+  const allAnswered =
+    nicknames.length > 0 &&
+    nicknames.every((name) => {
+      const answer = tempAnswers[name];
+
+      return (
+        Number.isInteger(answer) &&
+        answer >= 1 &&
+        answer <= choices.length
+      );
+    });
+
   return (
-    <div className="animate-in fade-in duration-300">
-      <h2 className="mb-6 text-center text-lg font-bold text-gray-800">
-        これで決定していいですか？
-      </h2>
-      <div className="mb-8 flex flex-col gap-3">
-        {nicknames.map(name => {
-          const selectedIndex = tempAnswers[name] - 1;
+    <div className="flex h-full min-h-0 flex-col gap-3 text-[#18366B]">
+      {/* 確認画面の見出し */}
+      <div className="shrink-0 text-center">
+        <h2 className="text-2xl font-extrabold">
+          これでいいかな？
+        </h2>
+
+        <p className="mt-2 text-xs leading-relaxed text-[#65748B]">
+          変えたいときは「変更」を押してね
+        </p>
+      </div>
+
+      {/* 人数に合わせてカードの高さを配分 */}
+      <div
+        className="grid min-h-0 flex-1 gap-2"
+        style={{
+          gridTemplateRows: `repeat(
+            ${Math.max(nicknames.length, 1)},
+            minmax(0, 1fr)
+          )`,
+        }}
+      >
+        {nicknames.map((name, index) => {
+          const answer = choices[tempAnswers[name] - 1];
+
           return (
-            <div key={name} className="rounded-xl bg-gray-50 p-4 border border-gray-100">
-              <p className="mb-1 text-sm font-bold text-blue-500">{name}</p>
-              <p className="font-bold text-gray-700">{choices[selectedIndex]}</p>
+            <div
+              key={name}
+              className="grid min-h-0 grid-cols-[1fr_auto] grid-rows-[auto_1fr_auto] gap-x-3 rounded-2xl border border-[#18366B]/10 bg-white px-4 py-3"
+            >
+              {/* 名前を左上に大きめに表示 */}
+              <p className="col-span-2 text-base font-extrabold text-[#18366B] [overflow-wrap:anywhere]">
+                {name}さん
+              </p>
+
+              {/* 選択した回答をカード中央に表示 */}
+              <p className="col-span-2 self-center py-1 text-center text-lg leading-snug font-extrabold text-[#18366B] [overflow-wrap:anywhere]">
+                {answer ?? "まだ選んでいません"}
+              </p>
+
+              {/* 変更ボタンを右下に配置 */}
+              <button
+                type="button"
+                onClick={() => onEditPlayer(index)}
+                disabled={isUpdating}
+                aria-label={`${name}さんの回答を変更`}
+                className="col-start-2 min-h-11 rounded-full bg-[#E4F2EE] px-4 py-2 text-sm font-bold text-[#18366B] transition-colors enabled:hover:bg-[#D5E9E3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18366B] disabled:opacity-40"
+              >
+                変更
+              </button>
             </div>
           );
         })}
       </div>
-      <div className="flex flex-col gap-3">
+
+      {/* 確定ボタンを画面内の最下部に配置 */}
+      <div className="shrink-0 border-t border-[#18366B]/10 pt-3">
         <button
+          type="button"
           onClick={onConfirmSave}
-          disabled={isUpdating}
-          className="w-full rounded-xl bg-blue-600 px-4 py-4 font-bold text-white transition-colors hover:bg-blue-700 active:scale-95 disabled:bg-gray-400 shadow-md flex items-center justify-center"
+          disabled={isUpdating || !allAnswered}
+          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#FFBC39] px-4 py-3 text-sm font-extrabold transition-colors enabled:hover:bg-[#FFB020] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18366B] disabled:bg-[#E5E7EB] disabled:text-[#65748B]"
         >
-          {isUpdating ? (
-            <>
-              <span className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent mr-2" />
-              きろくしています...
-            </>
-          ) : (
-            "はい、これで決定！"
+          {isUpdating && (
+            <span
+              aria-hidden="true"
+              className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent motion-reduce:animate-none"
+            />
           )}
+
+          {isUpdating ? "きろくしています..." : "これで決定！"}
         </button>
-        <button
-          onClick={onRedo}
-          disabled={isUpdating}
-          className="w-full rounded-xl bg-gray-100 px-4 py-4 font-bold text-gray-600 transition-colors hover:bg-gray-200 active:scale-95 disabled:opacity-50"
-        >
-          やり直す
-        </button>
+
+        {/* 保存状況を読み上げ */}
+        <p role="status" className="sr-only">
+          {isUpdating ? "回答を保存しています。" : ""}
+        </p>
       </div>
     </div>
   );
@@ -185,6 +336,7 @@ export function EggDisplay({
 }
 
 // ▼ 新規追加：結果発表（様子が変わった）画面コンポーネント
+// 保存後の結果画面
 export function SuccessPhase({
   successMessage,
   onFinish,
@@ -195,19 +347,24 @@ export function SuccessPhase({
   children: React.ReactNode;
 }) {
   return (
-    <div className="text-center animate-in zoom-in-95 fade-in duration-500">
-      <h2 className="mb-2 text-2xl font-bold text-blue-600 leading-relaxed">
+    <div className="animate-in fade-in zoom-in-95 text-center text-[#18366B] duration-500 motion-reduce:animate-none">
+      {/* 完了メッセージ */}
+      <h2 className="mb-3 text-3xl leading-relaxed font-extrabold">
         やったね！
       </h2>
-      <p className="mb-6 font-bold text-gray-700 leading-relaxed">
+
+      <p className="mb-5 text-base leading-relaxed font-bold">
         {successMessage}
       </p>
-      
+
+      {/* 更新後のたまご */}
       {children}
-      
+
+      {/* ホームへ戻る */}
       <button
+        type="button"
         onClick={onFinish}
-        className="mt-6 w-full rounded-xl bg-green-500 px-4 py-4 font-bold text-white transition-colors hover:bg-green-600 active:scale-95 shadow-md"
+        className="mt-5 min-h-12 w-full rounded-2xl bg-[#FFBC39] px-4 py-3 font-extrabold text-[#18366B] transition-colors hover:bg-[#FFB020] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18366B]"
       >
         ホームへ戻る
       </button>
