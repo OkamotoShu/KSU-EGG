@@ -12,7 +12,7 @@ import { TutorialModal } from "@/components/tutorial_modal";
 
 export default function Home() {
   const router = useRouter();
-  
+
   const [nicknames, setNicknames] = useState<string[]>([]);
   const [eggDataMap, setEggDataMap] = useState<Record<string, number[]>>({});
   const [scannedQRs, setScannedQRs] = useState<number[]>([0, 0, 0, 0, 0, 0]);
@@ -67,86 +67,120 @@ export default function Home() {
   }
 
   const currentName = nicknames[currentIndex] || "プレイヤー";
-  
+
   const currentEggData = eggDataMap[currentName] || [0, 0, 0, 0, 0, 0];
-  
+
   // ▼ 変更: 配列から情報を取得し、たまごと巣の画像パスを生成
   const traitEggType = currentEggData[0]; // 1箇所目: たまごのタイプ
-  const traitNest    = currentEggData[1]; // 2箇所目: 巣のタイプ
-  const traitColor   = currentEggData[2]; // 3箇所目: たまごの色
-  const traitPattern   = currentEggData[3]; // 3箇所目: たまごの色
+  const traitNest = currentEggData[1]; // 2箇所目: 巣のタイプ
+  const traitColor = currentEggData[2]; // 3箇所目: たまごの色
+  const traitPattern = currentEggData[3]; // 3箇所目: たまごの色
 
   const isHatched = scannedQRs[5] === 1;
   const monsterSrc = `/monster_${traitEggType}_${traitNest}_${traitColor}_0.png`;
-  const eggSrc = isHatched 
-    ? monsterSrc 
+  const eggSrc = isHatched
+    ? monsterSrc
     : `/egg_${traitEggType}_${traitColor}.png`;
-  const nestSrc = isHatched 
-    ? "/nest_0.png" 
+  const nestSrc = isHatched
+    ? "/nest_0.png"
     : `/nest_${traitNest}.png`;
-  const patternSrc = isHatched 
-    ? "/pattern_0.png" 
+  const patternSrc = isHatched
+    ? "/pattern_0.png"
     : `/pattern_${traitPattern}.png`;
 
   return (
     <>
       <Header />
-      
-      {/* 画面全体の設定。justify-center を外し、中身のflex-1で調整します */}
-      <main className="flex min-h-dvh flex-col items-center bg-gray-50 pt-20 pb-24 px-4">
-        
-        {/* ▼ ヘッダー部分 (shrink-0 をつけて潰れないようにする) */}
-        <div className="mb-4 flex w-full max-w-sm shrink-0 items-center justify-between">
-          {currentIndex > 0 ? (
-            <button
-              onClick={handlePrev}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow hover:bg-gray-100 active:scale-95"
-            >
-              <ChevronLeft className="h-6 w-6 text-gray-700" />
-            </button>
-          ) : (
-            <div className="w-10" />
-          )}
 
-          <h1 className="text-2xl font-bold tracking-wider text-gray-800">
-            {currentName}のたまご
+      {/* 画面全体の設定。justify-center を外し、中身のflex-1で調整します */}
+      <main className="flex min-h-dvh flex-col items-center bg-[#FFFCF3] px-5 pt-24 pb-28 text-[#18366B]">
+        <p
+          className="mb-4 flex items-center justify-center gap-3 text-xs font-extrabold tracking-[0.16em] text-[#A96500] sm:text-sm"
+          style={{ fontFamily: "var(--font-rounded), sans-serif" }}
+        >
+          <span aria-hidden="true" className="h-1 w-4 rounded-full bg-[#FFBC39]" />
+          MY LITTLE ADVENTURE
+          <span aria-hidden="true" className="h-1 w-4 rounded-full bg-[#FFBC39]" />
+        </p>
+        {/* 名前と左右切り替え */}
+        <div className="grid w-full max-w-md shrink-0 grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-3">
+          <button
+            type="button"
+            onClick={handlePrev}
+            disabled={currentIndex === 0}
+            aria-label="前のプレイヤー"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#E4F2EE] transition-colors hover:bg-[#D5E9E3] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:invisible"
+          >
+            <ChevronLeft aria-hidden="true" className="h-6 w-6" />
+          </button>
+
+          <h1
+            className="text-center text-[clamp(1.5rem,6vw,2rem)] leading-snug font-extrabold [overflow-wrap:anywhere]"
+            style={{ fontFamily: "var(--font-rounded), sans-serif" }}
+          >
+            {currentName}さん
           </h1>
 
-          {currentIndex < nicknames.length - 1 ? (
-            <button
-              onClick={handleNext}
-              className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow hover:bg-gray-100 active:scale-95"
-            >
-              <ChevronRight className="h-6 w-6 text-gray-700" />
-            </button>
-          ) : (
-            <div className="w-10" />
-          )}
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={currentIndex >= nicknames.length - 1}
+            aria-label="次のプレイヤー"
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#E4F2EE] transition-colors hover:bg-[#D5E9E3] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:invisible"
+          >
+            <ChevronRight aria-hidden="true" className="h-6 w-6" />
+          </button>
         </div>
 
-        {/* ▼ 変更: 画面の「上下の余白（空きスペース）」を自動計算して最大まで広がるラッパー */}
-        <div className="flex w-full flex-1 min-h-0 items-center justify-center py-2">
-          {/* ▼ h-full と aspect-square で、高さの限界まで広がる完全な「円」を作る */}
-          {/* max-w-full によって、横幅が足りないスマホでは横幅に合わせて円が縮みます */}
-          <div className="flex aspect-square h-full max-h-[380px] max-w-full items-center justify-center rounded-full bg-white shadow-xl">
-            <EggDisplay 
-              eggSrc={eggSrc} 
-              nestSrc={nestSrc} 
-              patternSrc={patternSrc} 
+        {/* 蛋のメイン展示区域 */}
+        <div className="flex w-full flex-1 items-center justify-center py-6">
+          <div
+            className="relative aspect-square w-full"
+            style={{
+              maxWidth: "min(480px, max(220px, calc(100dvh - 300px)))",
+            }}
+          >
+            {/* 柔和の淡い黄色背景 */}
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 top-[8%] bottom-[3%] rounded-[46%_54%_49%_51%/53%_45%_55%_47%] bg-[#FFF0C2]"
             />
+
+            {/* 蛋、巢と花柄の表示 */}
+            <div className="absolute inset-0">
+              <EggDisplay
+                eggSrc={eggSrc}
+                nestSrc={nestSrc}
+                patternSrc={patternSrc}
+              />
+            </div>
           </div>
         </div>
 
-        {/* ▼ インジケーター (shrink-0 をつけて潰れないようにする) */}
+        {/* プレイヤー選択 */}
         {nicknames.length > 1 && (
-          <div className="mt-6 flex shrink-0 gap-2">
-            {nicknames.map((_, idx) => (
-              <div
-                key={idx}
-                className={`h-2.5 w-2.5 rounded-full transition-colors ${
-                  idx === currentIndex ? "bg-blue-600" : "bg-gray-300"
-                }`}
-              />
+          <div
+            role="group"
+            aria-label="プレイヤーを選ぶ"
+            className="flex max-w-md shrink-0 flex-wrap justify-center"
+          >
+            {nicknames.map((name, idx) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => setCurrentIndex(idx)}
+                aria-label={`${name}のたまごを表示`}
+                aria-pressed={idx === currentIndex}
+                className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18366B]"
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-2.5 rounded-full transition-all ${idx === currentIndex
+                    ? "w-6 bg-[#18366B]"
+                    : "w-2.5 bg-[#18366B]/20"
+                    }`}
+                />
+              </button>
             ))}
           </div>
         )}
