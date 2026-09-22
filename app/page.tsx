@@ -72,9 +72,9 @@ export default function Home() {
 
   // ▼ 変更: 配列から情報を取得し、たまごと巣の画像パスを生成
   const traitEggType = currentEggData[0]; // 1箇所目: たまごのタイプ
-  const traitNest = currentEggData[1]; // 2箇所目: 巣のタイプ
-  const traitColor = currentEggData[2]; // 3箇所目: たまごの色
-  const traitPattern = currentEggData[3]; // 3箇所目: たまごの色
+  const traitNest = currentEggData[1] === 0 || currentEggData[1] === undefined ? 1 : currentEggData[1];    // 2箇所目: 巣
+  const traitColor = currentEggData[2] === 0 || currentEggData[2] === undefined ? 1 : currentEggData[2];   // 3箇所目: 色
+  const traitPattern = currentEggData[3]; // 3箇所目: たまごの模様
 
   const isHatched = scannedQRs[5] === 1;
   const monsterSrc = `/monster_${traitEggType}_${traitNest}_${traitColor}_0.png`;
@@ -87,6 +87,9 @@ export default function Home() {
   const patternSrc = isHatched
     ? "/pattern_0.png"
     : `/pattern_${traitPattern}.png`;
+  const auraSrc = isHatched
+    ? `/aura_${traitPattern}.png` // ※ 必要に応じてファイル名規則に合せて調整してください
+    : "/aura_0.png";
 
   // たまごの色に合わせた切り替えボタンの配色
   const eggButtonColors: Record<
@@ -272,6 +275,7 @@ export default function Home() {
                   eggSrc={eggSrc}
                   nestSrc={nestSrc}
                   patternSrc={patternSrc}
+                  auraSrc={auraSrc}
                 />
               </div>
             </div>
