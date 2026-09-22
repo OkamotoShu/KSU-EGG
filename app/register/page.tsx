@@ -8,6 +8,7 @@ import { signInAnonymously } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
 import { Header } from "@/components/header";
 import { postCollectionInLogs } from "@/lib/dbActions";
+import { ChevronDown } from "lucide-react";
 
 export default function RegisterPage() {
   const [playerCount, setPlayerCount] = useState<number>(1);
@@ -18,7 +19,7 @@ export default function RegisterPage() {
   const handlePlayerCountChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const count = parseInt(e.target.value, 10);
     setPlayerCount(count);
-    
+
     setNicknames((prev) => {
       const newNicknames = [...prev];
       if (count > prev.length) {
@@ -42,7 +43,7 @@ export default function RegisterPage() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (nicknames.some((name) => !name.trim())) {
       alert("すべてのニックネームを入力してください。");
       return;
@@ -69,7 +70,7 @@ export default function RegisterPage() {
         player: playerCount,
         nickName: nickNameMap,
         orderedNames: nicknames.map(name => name.trim()),
-        dev: 0, 
+        dev: 0,
         scannedQRs: [0, 0, 0, 0, 0, 0],
         createdAt: new Date(),
       });
@@ -89,56 +90,138 @@ export default function RegisterPage() {
   return (
     <>
       <Header />
-      <main className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 pt-20 pb-24 px-4">
-        <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-md">
-          <h1 className="mb-6 text-center text-2xl font-bold text-blue-600">
-            ゲームのじゅんび
-          </h1>
 
-          <form onSubmit={handleRegister} className="flex flex-col gap-6">
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                あそぶ人数
-              </label>
-              <select
-                value={playerCount}
-                onChange={handlePlayerCountChange}
-                className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              >
-                {[1, 2, 3, 4].map((num) => (
-                  <option key={num} value={num}>
-                    {num} 人
-                  </option>
-                ))}
-              </select>
-            </div>
+      <main className="flex min-h-dvh flex-col items-center bg-[#FFFCF3] px-5 pt-28 pb-8 text-[#18366B]">
+        <div className="my-auto w-full max-w-sm">
+          {/* ページタイトル */}
+          <div className="mb-6 text-center">
+            <p className="mb-2 text-xs font-extrabold tracking-[0.16em] text-[#A96500]">
+              MY LITTLE ADVENTURE
+            </p>
 
-            <div className="flex flex-col gap-4">
-              <label className="block text-sm font-medium text-gray-700">
-                ニックネーム
-              </label>
-              {nicknames.map((name, index) => (
-                <div key={index}>
-                  <input
-                    type="text"
-                    required
-                    maxLength={10}
-                    value={name}
-                    onChange={(e) => handleNicknameChange(index, e.target.value)}
-                    placeholder={`プレイヤー ${index + 1} のなまえ`}
-                    className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            <h1 className="text-3xl font-extrabold">
+              ゲームのじゅんび
+            </h1>
+
+            <p className="mt-3 text-sm leading-relaxed">
+              あそぶ人数となまえを教えてね
+            </p>
+          </div>
+
+          {/* 参加者の登録フォーム */}
+          <form
+            onSubmit={handleRegister}
+            aria-busy={isLoading}
+            className="rounded-3xl border border-[#18366B]/10 bg-white/80 p-5 sm:p-6"
+          >
+            <fieldset
+              disabled={isLoading}
+              className="flex min-w-0 flex-col gap-6 disabled:opacity-60"
+            >
+              <legend className="sr-only">
+                参加者の情報
+              </legend>
+
+              {/* 一緒に遊ぶ人数 */}
+              <div>
+                <label
+                  htmlFor="player-count"
+                  className="mb-3 flex items-center gap-2 text-base font-bold"
+                >
+                  <span
+                    aria-hidden="true"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[#E4F2EE] text-sm"
+                  >
+                    1
+                  </span>
+                  あそぶ人数
+                </label>
+
+                {/* 標準の矢印を非表示にし、大きなアイコンを配置 */}
+                <div className="relative">
+                  <select
+                    id="player-count"
+                    value={playerCount}
+                    onChange={handlePlayerCountChange}
+                    className="min-h-14 w-full appearance-none rounded-2xl border border-[#18366B]/20 bg-[#FFFCF3] py-3 pr-14 pl-4 text-base font-bold focus:border-[#269D9C] focus:outline-none focus:ring-2 focus:ring-[#269D9C]/25"
+                  >
+                    {[1, 2, 3, 4].map((num) => (
+                      <option key={num} value={num}>
+                        {num}人
+                      </option>
+                    ))}
+                  </select>
+
+                  <ChevronDown
+                    aria-hidden="true"
+                    className="pointer-events-none absolute top-1/2 right-4 h-7 w-7 -translate-y-1/2 text-[#18366B]"
+                    strokeWidth={2.5}
                   />
                 </div>
-              ))}
-            </div>
+              </div>
 
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="mt-2 rounded-lg bg-blue-600 p-3 font-bold text-white transition-colors hover:bg-blue-700 disabled:bg-gray-400"
-            >
-              {isLoading ? "じゅんび中..." : "ゲームをはじめる"}
-            </button>
+              {/* 各プレイヤーのニックネーム */}
+              <div>
+                <h2 className="mb-2 flex items-center gap-2 text-base font-bold">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-7 w-7 items-center justify-center rounded-full bg-[#FFF0C2] text-sm"
+                  >
+                    2
+                  </span>
+                  ニックネーム
+                </h2>
+
+                <p
+                  id="nickname-hint"
+                  className="mb-4 text-xs leading-relaxed text-[#65748B]"
+                >
+                  10文字まで。同じなまえは使えないよ。
+                </p>
+
+                <div className="flex flex-col gap-4">
+                  {nicknames.map((name, index) => (
+                    <div key={index}>
+                      <label
+                        htmlFor={`nickname-${index}`}
+                        className="mb-2 block text-sm font-bold"
+                      >
+                        {index + 1}人目のなまえ
+                      </label>
+
+                      <input
+                        id={`nickname-${index}`}
+                        type="text"
+                        required
+                        maxLength={10}
+                        value={name}
+                        onChange={(event) =>
+                          handleNicknameChange(index, event.target.value)
+                        }
+                        aria-describedby="nickname-hint"
+                        placeholder="なまえを入力"
+                        autoComplete="off"
+                        className="min-h-14 w-full rounded-2xl border border-[#18366B]/20 bg-[#FFFCF3] px-4 py-3 text-base placeholder:text-[#65748B] focus:border-[#269D9C] focus:outline-none focus:ring-2 focus:ring-[#269D9C]/25"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 登録してゲームを開始 */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="min-h-14 w-full rounded-2xl bg-[#FFBC39] px-4 py-3 text-base font-extrabold transition-colors hover:bg-[#FFB020] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:cursor-wait"
+              >
+                {isLoading ? "じゅんび中..." : "ゲームをはじめる"}
+              </button>
+            </fieldset>
+
+            {/* 処理状況を読み上げ */}
+            <p role="status" className="sr-only">
+              {isLoading ? "じゅんび中です。少し待ってね。" : ""}
+            </p>
           </form>
         </div>
       </main>
