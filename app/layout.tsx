@@ -1,8 +1,12 @@
-// app/layout.tsx
 import "./globals.css";
-import { Inter } from "next/font/google";
+import { M_PLUS_Rounded_1c } from "next/font/google";
 
-const inter = Inter({ subsets: ["latin"] });
+const rounded = M_PLUS_Rounded_1c({
+  subsets: ["latin"],
+  weight: ["400", "500", "700", "800"],
+  variable: "--font-rounded",
+  display: "swap",
+});
 
 export default function RootLayout({
   children,
@@ -11,9 +15,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className={inter.className}>
-        {children}
-      </body>
+      <body className={rounded.variable}>{children}</body>
     </html>
   );
 }
