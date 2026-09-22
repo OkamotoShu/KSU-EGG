@@ -88,6 +88,62 @@ export default function Home() {
     ? "/pattern_0.png"
     : `/pattern_${traitPattern}.png`;
 
+  // たまごの色に合わせた切り替えボタンの配色
+  const eggButtonColors: Record<
+    number,
+    { background: string; border: string; foreground: string }
+  > = {
+    // ピンク
+    1: {
+      background: "#F8D5DF",
+      border: "#DCA5B6",
+      foreground: "#863D55",
+    },
+
+    // 水色
+    2: {
+      background: "#D4EDF3",
+      border: "#9FC8D5",
+      foreground: "#315E70",
+    },
+
+    // 淡い黄色
+    3: {
+      background: "#F9EFAE",
+      border: "#D9CA7D",
+      foreground: "#756020",
+    },
+
+    // 淡い緑
+    4: {
+      background: "#D9EBCF",
+      border: "#ADC79D",
+      foreground: "#456338",
+    },
+  };
+
+  // 未選択・操作できない場合は無彩色
+  const neutralButtonColors = {
+    background: "#FFFFFF",
+    border: "#D1D5DB",
+    foreground: "#6B7280",
+  };
+
+  const selectedButtonColors =
+    eggButtonColors[traitColor] ?? neutralButtonColors;
+
+  const getEggButtonStyle = (disabled: boolean) => {
+    const colors = disabled
+      ? neutralButtonColors
+      : selectedButtonColors;
+
+    return {
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+      color: colors.foreground,
+    };
+  };
+
   return (
     <>
       <Header />
@@ -115,11 +171,12 @@ export default function Home() {
             onClick={handlePrev}
             disabled={currentIndex === 0}
             aria-label="前のプレイヤーのたまご"
-            className="relative flex h-14 w-12 -rotate-6 items-center justify-center rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 border-[#B8DBD1] bg-[#E4F2EE] shadow-[0_3px_0_#B8DBD1] transition-transform enabled:hover:rotate-0 enabled:active:translate-y-0.5 enabled:active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:opacity-30 motion-reduce:transition-none"
+            style={getEggButtonStyle(currentIndex === 0)}
+            className="relative flex h-14 w-12 -rotate-6 items-center justify-center rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 shadow-sm transition-[transform,background-color,border-color,color] duration-200 enabled:hover:rotate-0 enabled:active:translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:opacity-40 motion-reduce:transition-none"
           >
             <span
               aria-hidden="true"
-              className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-white"
+              className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-white/80"
             />
             <ChevronLeft
               aria-hidden="true"
@@ -176,11 +233,12 @@ export default function Home() {
             onClick={handleNext}
             disabled={currentIndex >= nicknames.length - 1}
             aria-label="次のプレイヤーのたまご"
-            className="relative flex h-14 w-12 rotate-6 items-center justify-center rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 border-[#E8C570] bg-[#FFE5A3] shadow-[0_3px_0_#E8C570] transition-transform enabled:hover:rotate-0 enabled:active:translate-y-0.5 enabled:active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:opacity-30 motion-reduce:transition-none"
+            style={getEggButtonStyle(currentIndex >= nicknames.length - 1)}
+            className="relative flex h-14 w-12 rotate-6 items-center justify-center rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 shadow-sm transition-[transform,background-color,border-color,color] duration-200 enabled:hover:rotate-0 enabled:active:translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:opacity-40 motion-reduce:transition-none"
           >
             <span
               aria-hidden="true"
-              className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-white"
+              className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-white/80"
             />
             <ChevronRight
               aria-hidden="true"
@@ -239,8 +297,8 @@ export default function Home() {
                 <span
                   aria-hidden="true"
                   className={`h-4 w-3 rounded-[50%_50%_45%_45%/60%_60%_40%_40%] transition-colors ${index === currentIndex
-                      ? "bg-[#18366B]"
-                      : "bg-[#18366B]/20"
+                    ? "bg-[#18366B]"
+                    : "bg-[#18366B]/20"
                     }`}
                 />
               </button>
