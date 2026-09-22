@@ -1,4 +1,5 @@
 // app/event/page.tsx
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
@@ -24,6 +25,9 @@ function EventContent() {
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [totalScans, setTotalScans] = useState(0);
   const [tempAnswers, setTempAnswers] = useState<Record<string, number>>({});
+  
+  // ▼ 追加: 全員のたまごデータを保持しておくステート
+  const [eggDataMap, setEggDataMap] = useState<Record<string, number[]>>({});
 
   useEffect(() => {
     if (!qrIdParam) {
@@ -43,16 +47,19 @@ function EventContent() {
 
         const data = userSnap.data();
         
-        // プレイヤー一覧の取得（入力順の配列）
+        // プレイヤー一覧の取得
         const names = data.orderedNames || Object.keys(data.nickName || {});
         setNicknames(names);
+        
+        // ▼ 追加: たまごデータをステートに保存
+        setEggDataMap(data.nickName || {});
 
         // 読み取り回数（合計値）を計算
         const scannedQRs: number[] = data.scannedQRs || [0, 0, 0, 0, 0, 0];
         const total = scannedQRs.reduce((sum, current) => sum + current, 0);
-        setTotalScans(total); // 例: 初回なら0、1回クリア後なら1
+        setTotalScans(total);
 
-        // 合計値をドキュメントIDとして event コレクションから設問を取得
+        // イベントデータの取得
         const eventRef = doc(db, "event", total.toString());
         const eventSnap = await getDoc(eventRef);
 
@@ -88,18 +95,15 @@ function EventContent() {
     if (isUpdating || !currentUser || !qrIdParam) return;
     
     const currentName = nicknames[currentPlayerIndex];
-    // 選択した設問の番号（1番目からなので index + 1）を一時保存
     const selectedAnswerNumber = choiceIndex + 1;
     const newAnswers = { ...tempAnswers, [currentName]: selectedAnswerNumber };
     setTempAnswers(newAnswers);
 
-    // ▼ まだ次のプレイヤーがいる場合、画面を切り替えて処理を終了
     if (currentPlayerIndex < nicknames.length - 1) {
       setCurrentPlayerIndex((prev) => prev + 1);
       return; 
     }
 
-    // ▼ 全員が選び終わった場合、一括でFirestoreに保存する
     setIsUpdating(true);
     const qrIndex = parseInt(qrIdParam, 10);
 
@@ -110,26 +114,20 @@ function EventContent() {
       if (userSnap.exists()) {
         const data = userSnap.data();
         
-        // 1. QR読み取り場所のフラグを1にする
         const newScannedQRs = [...(data.scannedQRs || [0, 0, 0, 0, 0, 0])];
         newScannedQRs[qrIndex] = 1;
 
-        // 2. 全員のたまご情報を更新する
         const updatedNickName = { ...data.nickName };
         nicknames.forEach((name) => {
-          // その人が選んだ番号
           const answerNum = newAnswers[name];
-          // 初回イベント（totalScans=0）なら配列の0番目に上書き
           updatedNickName[name][totalScans] = answerNum;
         });
 
-        // まとめてFirestoreを更新
         await updateDoc(userRef, {
           scannedQRs: newScannedQRs,
           nickName: updatedNickName
         });
 
-        // ホームへ戻る
         router.push("/");
       }
     } catch (error) {
@@ -144,6 +142,16 @@ function EventContent() {
   }
 
   const currentName = nicknames[currentPlayerIndex];
+  const eventImageSrc = `/event_${totalScans}.png`;
+
+  // ▼ 追加: 現在のプレイヤーの過去の回答データから画像を特定
+  const userAnswers = eggDataMap[currentName] || [];
+  const eggType = userAnswers[0] || 0;    // 1回目(インデックス0)の回答＝タイプ
+  const eggColor = userAnswers[2] || 0;   // 3回目(インデックス2)の回答＝色
+  const eggPattern = userAnswers[3] || 0; // 4回目(インデックス3)の回答＝模様
+
+  const eggImagePath = `/egg_${eggType}_${eggColor}.png`;
+  const patternImagePath = `/pattern_${eggPattern}.png`;
 
   return (
     <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-md">
@@ -160,6 +168,33 @@ function EventContent() {
       </h2>
 
       <div className="mb-6 h-px w-full bg-gray-200" />
+
+      {/* ▼ 変更: イベント画像とたまご画像を重ねて表示 */}
+      <div className="mb-6 relative mx-auto flex w-full max-w-[240px] justify-center">
+        
+        {/* totalScansが3または4のときだけ、後ろにたまごと模様を表示 */}
+        {(totalScans === 3 || totalScans === 4) && (
+          <>
+            <img
+              src={eggImagePath}
+              alt="たまご"
+              className="absolute inset-0 m-auto h-full w-full object-contain"
+            />
+            <img
+              src={patternImagePath}
+              alt="模様"
+              className="absolute inset-0 m-auto h-full w-full object-contain"
+            />
+          </>
+        )}
+
+        {/* 前面のイベント画像 */}
+        <img
+          src={eventImageSrc}
+          alt="イベント画像"
+          className="relative z-10 w-full object-contain drop-shadow-md"
+        />
+      </div>
 
       <h1 className="mb-6 text-lg font-bold leading-relaxed text-gray-800">
         {question}
