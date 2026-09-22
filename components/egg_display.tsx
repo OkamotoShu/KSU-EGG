@@ -19,7 +19,7 @@ export function EggDisplay({ eggSrc, nestSrc, patternSrc }: EggDisplayProps) {
         <img
           src={nestSrc}
           alt="たまごの巣"
-          className="absolute bottom-[2%] z-0 h-[50%] w-[100%] object-contain"
+          className="absolute bottom-[2%] z-0 h-[80%] w-[80%] object-contain"
         />
       )}
       

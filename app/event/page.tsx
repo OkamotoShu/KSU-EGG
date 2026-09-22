@@ -1,5 +1,4 @@
 // app/event/page.tsx
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
@@ -8,6 +7,17 @@ import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { Header } from "@/components/header";
+import {
+  EventImage,
+  TitlePhase,
+  QuestionPhase,
+  ConfirmPhase,
+  SuccessPhase,   // 新規追加
+  EggDisplay      // 新規追加
+} from "@/components/event-phases";
+
+// ▼ 'success' フェーズを追加
+type Phase = "title" | "question" | "confirm" | "success";
 
 function EventContent() {
   const searchParams = useSearchParams();
@@ -16,17 +26,19 @@ function EventContent() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [question, setQuestion] = useState("");
-  const [choices, setChoices] = useState<string[]>([]);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
 
-  // ▼ 複数人プレイ・たまご情報更新用のステート
+  const [phase, setPhase] = useState<Phase>("title");
+  const [eventTitle, setEventTitle] = useState("");
+  const [question, setQuestion] = useState("");
+  const [choices, setChoices] = useState<string[]>([]);
+  // ▼ 成功時のメッセージステートを追加
+  const [successMessage, setSuccessMessage] = useState("");
+  
   const [nicknames, setNicknames] = useState<string[]>([]);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [totalScans, setTotalScans] = useState(0);
   const [tempAnswers, setTempAnswers] = useState<Record<string, number>>({});
-  
-  // ▼ 追加: 全員のたまごデータを保持しておくステート
   const [eggDataMap, setEggDataMap] = useState<Record<string, number[]>>({});
 
   useEffect(() => {
@@ -47,31 +59,31 @@ function EventContent() {
 
         const data = userSnap.data();
         
-        // プレイヤー一覧の取得
         const names = data.orderedNames || Object.keys(data.nickName || {});
         setNicknames(names);
-        
-        // ▼ 追加: たまごデータをステートに保存
         setEggDataMap(data.nickName || {});
 
-        // 読み取り回数（合計値）を計算
         const scannedQRs: number[] = data.scannedQRs || [0, 0, 0, 0, 0, 0];
         const total = scannedQRs.reduce((sum, current) => sum + current, 0);
         setTotalScans(total);
 
-        // イベントデータの取得
         const eventRef = doc(db, "event", total.toString());
         const eventSnap = await getDoc(eventRef);
 
         if (eventSnap.exists()) {
           const eventData = eventSnap.data();
+          setEventTitle(eventData.title || "イベント発生！"); 
           setQuestion(eventData.content);
           setChoices(eventData.select || []);
+          // ▼ DBの success フィールドを取得（なければデフォルト文言）
+          setSuccessMessage(eventData.success || "たまごの様子が変わった！");
         } else {
+          setEventTitle("エラー");
           setQuestion("イベントデータが見つかりませんでした。");
         }
       } catch (error) {
         console.error("イベント取得エラー:", error);
+        setEventTitle("エラー");
         setQuestion("エラーが発生しました。");
       } finally {
         setIsLoading(false);
@@ -90,20 +102,26 @@ function EventContent() {
     return () => unsubscribe();
   }, [qrIdParam, router]);
 
-  // ▼ 選択肢を選んだときの処理
-  const handleChoiceClick = async (choiceIndex: number) => {
-    if (isUpdating || !currentUser || !qrIdParam) return;
-    
+  const handleChoiceClick = (choiceIndex: number) => {
     const currentName = nicknames[currentPlayerIndex];
     const selectedAnswerNumber = choiceIndex + 1;
-    const newAnswers = { ...tempAnswers, [currentName]: selectedAnswerNumber };
-    setTempAnswers(newAnswers);
+    setTempAnswers(prev => ({ ...prev, [currentName]: selectedAnswerNumber }));
 
     if (currentPlayerIndex < nicknames.length - 1) {
-      setCurrentPlayerIndex((prev) => prev + 1);
-      return; 
+      setCurrentPlayerIndex(prev => prev + 1);
+    } else {
+      setPhase("confirm");
     }
+  };
 
+  const handleRedo = () => {
+    setCurrentPlayerIndex(0);
+    setTempAnswers({});
+    setPhase("question");
+  };
+
+  const handleConfirmSave = async () => {
+    if (isUpdating || !currentUser || !qrIdParam) return;
     setIsUpdating(true);
     const qrIndex = parseInt(qrIdParam, 10);
 
@@ -113,14 +131,12 @@ function EventContent() {
       
       if (userSnap.exists()) {
         const data = userSnap.data();
-        
         const newScannedQRs = [...(data.scannedQRs || [0, 0, 0, 0, 0, 0])];
         newScannedQRs[qrIndex] = 1;
 
         const updatedNickName = { ...data.nickName };
         nicknames.forEach((name) => {
-          const answerNum = newAnswers[name];
-          updatedNickName[name][totalScans] = answerNum;
+          updatedNickName[name][totalScans] = tempAnswers[name];
         });
 
         await updateDoc(userRef, {
@@ -128,7 +144,11 @@ function EventContent() {
           nickName: updatedNickName
         });
 
-        router.push("/");
+        // ▼ 保存完了後、すぐホームに戻るのではなく成功画面を表示する
+        setEggDataMap(updatedNickName); // 新しい情報を画面に反映
+        setTotalScans(prev => prev + 1); // 次のステージに進んだことを反映
+        setIsUpdating(false);
+        setPhase("success");
       }
     } catch (error) {
       console.error("更新エラー:", error);
@@ -141,82 +161,81 @@ function EventContent() {
     return <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />;
   }
 
-  const currentName = nicknames[currentPlayerIndex];
-  const eventImageSrc = `/event_${totalScans}.png`;
-
-  // ▼ 追加: 現在のプレイヤーの過去の回答データから画像を特定
+  // --- イベント中の画像パス算出 (Question/Title フェーズ用) ---
+  const currentName = nicknames[currentPlayerIndex] || nicknames[0];
   const userAnswers = eggDataMap[currentName] || [];
-  const eggType = userAnswers[0] || 0;    // 1回目(インデックス0)の回答＝タイプ
-  const eggColor = userAnswers[2] || 0;   // 3回目(インデックス2)の回答＝色
-  const eggPattern = userAnswers[3] || 0; // 4回目(インデックス3)の回答＝模様
-
-  const eggImagePath = `/egg_${eggType}_${eggColor}.png`;
-  const patternImagePath = `/pattern_${eggPattern}.png`;
+  
+  const imageProps = {
+    totalScans,
+    eventImageSrc: `/event_${totalScans}.png`,
+    eggImagePath: `/egg_${userAnswers[0] || 0}_${userAnswers[2] || 0}.png`,
+    patternImagePath: `/pattern_${userAnswers[3] || 0}.png`
+  };
 
   return (
     <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-md">
-      
-      {/* 複数人プレイ時のインジケーター */}
-      {nicknames.length > 1 && (
-        <p className="mb-2 text-center text-sm font-bold text-blue-500">
-          {currentPlayerIndex + 1} 人目 / {nicknames.length} 人中
-        </p>
+      {phase === "title" && (
+        <TitlePhase eventTitle={eventTitle} onNext={() => setPhase("question")}>
+          <EventImage {...imageProps} />
+        </TitlePhase>
       )}
 
-      <h2 className="mb-4 text-center text-lg font-bold text-gray-700">
-        <span className="text-blue-600">{currentName}</span> のばん
-      </h2>
+      {phase === "question" && (
+        <QuestionPhase
+          nicknames={nicknames}
+          currentPlayerIndex={currentPlayerIndex}
+          question={question}
+          choices={choices}
+          onChoiceClick={handleChoiceClick}
+        >
+          <EventImage {...imageProps} />
+        </QuestionPhase>
+      )}
 
-      <div className="mb-6 h-px w-full bg-gray-200" />
-
-      {/* ▼ 変更: イベント画像とたまご画像を重ねて表示 */}
-      <div className="mb-6 relative mx-auto flex w-full max-w-[240px] justify-center">
-        
-        {/* totalScansが3または4のときだけ、後ろにたまごと模様を表示 */}
-        {(totalScans === 3 || totalScans === 4) && (
-          <>
-            <img
-              src={eggImagePath}
-              alt="たまご"
-              className="absolute inset-0 m-auto h-full w-full object-contain"
-            />
-            <img
-              src={patternImagePath}
-              alt="模様"
-              className="absolute inset-0 m-auto h-full w-full object-contain"
-            />
-          </>
-        )}
-
-        {/* 前面のイベント画像 */}
-        <img
-          src={eventImageSrc}
-          alt="イベント画像"
-          className="relative z-10 w-full object-contain drop-shadow-md"
+      {phase === "confirm" && (
+        <ConfirmPhase
+          nicknames={nicknames}
+          tempAnswers={tempAnswers}
+          choices={choices}
+          isUpdating={isUpdating}
+          onConfirmSave={handleConfirmSave}
+          onRedo={handleRedo}
         />
-      </div>
+      )}
 
-      <h1 className="mb-6 text-lg font-bold leading-relaxed text-gray-800">
-        {question}
-      </h1>
-      
-      <div className="flex flex-col gap-4">
-        {choices.map((choiceText, idx) => (
-          <button
-            key={idx}
-            onClick={() => handleChoiceClick(idx)}
-            disabled={isUpdating}
-            className="rounded-xl border-2 border-blue-100 bg-blue-50 p-4 text-left font-bold text-blue-700 transition-colors hover:bg-blue-100 active:scale-95 disabled:bg-gray-100 disabled:text-gray-400"
-          >
-            {choiceText}
-          </button>
-        ))}
-      </div>
-      
-      {isUpdating && (
-        <p className="mt-6 text-center text-sm font-bold text-blue-600 animate-pulse">
-          きろくしています...
-        </p>
+      {/* ▼ 決定後の結果表示画面 */}
+      {phase === "success" && (
+        <SuccessPhase
+          successMessage={successMessage}
+          onFinish={() => router.push("/")}
+        >
+          <div className="flex flex-wrap justify-center gap-6 my-4">
+            {nicknames.map((name) => {
+              // 最新の状態のデータを取得
+              const ans = eggDataMap[name] || [];
+              const eType = ans[0] || 0;
+              const eColor = ans[2] || 0;
+              const ePattern = ans[3] || 0;
+              
+              // 1人なら大きく、複数人なら小さく表示
+              const sizeClass = nicknames.length === 1 ? "max-w-[200px]" : "max-w-[100px]";
+
+              return (
+                <div key={name} className="flex flex-col items-center">
+                  {nicknames.length > 1 && (
+                    <p className="text-sm font-bold text-gray-500 mb-2">{name}</p>
+                  )}
+                  <EggDisplay
+                    eggImagePath={`/egg_${eType}_${eColor}.png`}
+                    patternImagePath={`/pattern_${ePattern}.png`}
+                    showPattern={totalScans >= 4} // +1されているため、新しい模様判定
+                    sizeClass={sizeClass}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </SuccessPhase>
       )}
     </div>
   );
@@ -227,7 +246,7 @@ export default function EventPage() {
     <>
       <Header />
       <main className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 pt-20 px-4 pb-10">
-        <Suspense fallback={<p>読み込み中...</p>}>
+        <Suspense fallback={<div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />}>
           <EventContent />
         </Suspense>
       </main>
