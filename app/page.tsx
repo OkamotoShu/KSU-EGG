@@ -72,12 +72,12 @@ export default function Home() {
 
   // ▼ 変更: 配列から情報を取得し、たまごと巣の画像パスを生成
   const traitEggType = currentEggData[0]; // 1箇所目: たまごのタイプ
-  const traitNest = currentEggData[1] === 0 || currentEggData[1] === undefined ? 1 : currentEggData[1];    // 2箇所目: 巣
-  const traitColor = currentEggData[2] === 0 || currentEggData[2] === undefined ? 1 : currentEggData[2];   // 3箇所目: 色
+  const traitNest = currentEggData[1];    // 2箇所目: 巣
+  const traitColor = currentEggData[2];   // 3箇所目: 色
   const traitPattern = currentEggData[3]; // 3箇所目: たまごの模様
 
   const isHatched = scannedQRs[5] === 1;
-  const monsterSrc = `/monster_${traitEggType}_${traitNest}_${traitColor}_0.png`;
+  const monsterSrc = `/monster_${traitEggType}_${traitNest || 1}_${traitColor || 1}_0.png`;
   const eggSrc = isHatched
     ? monsterSrc
     : `/egg_${traitEggType}_${traitColor}.png`;

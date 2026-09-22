@@ -25,6 +25,7 @@ export default function HatchPage() {
   const [isConfirmed, setIsConfirmed] = useState(false); // 未クリア警告を無視して進むか
   const [tapCount, setTapCount] = useState(0);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isFinished, setIsFinished] = useState(false); // ▼ 新規：全員の孵化完了フラグ
 
   useEffect(() => {
     const fetchEventData = async (user: User) => {
@@ -73,7 +74,7 @@ export default function HatchPage() {
   // ▼ タップしたときの処理
   const handleTap = () => {
     if (tapCount < 10) {
-      setTapCount(prev => prev + 1);
+      setTapCount((prev) => prev + 1);
     }
   };
 
@@ -81,10 +82,10 @@ export default function HatchPage() {
   const handleNextPlayer = async () => {
     if (currentPlayerIndex < nicknames.length - 1) {
       // 次のプレイヤーへ
-      setCurrentPlayerIndex(prev => prev + 1);
+      setCurrentPlayerIndex((prev) => prev + 1);
       setTapCount(0); // タップ数をリセット
     } else {
-      // 全員終了：Firestoreを更新してホームへ
+      // 全員終了：Firestoreを更新して結果画面を表示
       setIsUpdating(true);
       try {
         if (!currentUser) return;
@@ -97,30 +98,110 @@ export default function HatchPage() {
           newScannedQRs[5] = 1; // ゴール地点をクリア済みにする
 
           await updateDoc(userRef, { scannedQRs: newScannedQRs });
-          router.push("/"); // 将来的にはリザルト画面に飛ばすのもアリです
+          setIsFinished(true); // ▼ 直接ホームへ遷移せず結果画面フラグをONにする
         }
       } catch (error) {
         console.error("更新エラー:", error);
         alert("エラーが発生しました。");
+      } finally {
         setIsUpdating(false);
       }
     }
   };
 
   if (isLoading) {
-    return <div className="flex min-h-dvh items-center justify-center bg-gray-50"><p>読み込み中...</p></div>;
+    return (
+      <div className="flex min-h-dvh items-center justify-center bg-gray-50">
+        <p className="text-gray-500">読み込み中...</p>
+      </div>
+    );
+  }
+
+  // ▼ 全員のたまごが割れた後の「結果表示画面」
+  if (isFinished) {
+    return (
+      <>
+        <Header />
+        <main className="flex min-h-dvh flex-col items-center justify-center bg-[#FFFCF3] px-5 pt-24 pb-12 text-[#18366B]">
+          <div className="w-full max-w-md text-center">
+            <h1 className="mb-2 text-3xl font-extrabold text-[#50331D]">
+              やったね！
+            </h1>
+            <p className="mb-6 text-base font-bold text-[#65748B]">
+              みんなのモンスターが生まれたよ！
+            </p>
+
+            {/* 人数分の孵化後のモンスターを並べて表示 */}
+            <div
+              className={`mb-8 grid gap-4 w-full ${
+                nicknames.length === 1 ? "grid-cols-1" : "grid-cols-2"
+              }`}
+            >
+              {nicknames.map((name) => {
+                const eggData = eggDataMap[name] || [0, 0, 0, 0];
+                const eggType = eggData[0];
+                const nest =
+                  eggData[1] === 0 || eggData[1] === undefined ? 1 : eggData[1];
+                const color =
+                  eggData[2] === 0 || eggData[2] === undefined ? 1 : eggData[2];
+                const pattern = eggData[3];
+
+                const monsterSrc = `/monster_${eggType}_${nest}_${color}_0.png`;
+                const nestSrc = "/nest_0.png";
+                const patternSrc = "/pattern_0.png";
+                const auraSrc = `/aura_${pattern}.png`;
+
+                return (
+                  <div
+                    key={name}
+                    className="flex flex-col items-center rounded-2xl border border-[#18366B]/10 bg-white p-4 shadow-sm"
+                  >
+                    <div className="relative aspect-square w-full max-w-[160px]">
+                      <EggDisplay
+                        eggSrc={monsterSrc}
+                        nestSrc={nestSrc}
+                        patternSrc={patternSrc}
+                        auraSrc={auraSrc}
+                      />
+                    </div>
+                    <p className="mt-2 text-sm font-extrabold text-[#50331D] [overflow-wrap:anywhere]">
+                      {name}さん
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ホーム画面へ戻るボタン */}
+            <button
+              type="button"
+              onClick={() => router.push("/")}
+              className="w-full rounded-2xl bg-[#FFBC39] py-4 text-base font-extrabold text-[#18366B] shadow-md transition hover:bg-[#FFB020] active:scale-95"
+            >
+              ホーム画面へ戻る
+            </button>
+          </div>
+        </main>
+      </>
+    );
   }
 
   const currentName = nicknames[currentPlayerIndex];
   const currentEggData = eggDataMap[currentName] || [0, 0, 0, 0];
-  
-  const monsterSrc = `/monster_${currentEggData[0]}_${currentEggData[1]}_${currentEggData[2]}_0.png`;
-  const eggSrc = `/egg_${currentEggData[0]}_${currentEggData[2]}.png`;
-  const displaySrc = tapCount >= 10 ? monsterSrc : eggSrc;
-  const nestSrc = `/nest_${currentEggData[1]}.png`;
-  const patternSrc = `/pattern_${currentEggData[3]}.png`;
 
-  // ▼ 変更点：三項演算子を使わず、未制覇かつ未確認の場合はこの画面を返す
+  const traitEggType = currentEggData[0];
+  const traitNest = currentEggData[1];
+  const traitColor = currentEggData[2];
+  const traitPattern = currentEggData[3];
+
+  const monsterSrc = `/monster_${traitEggType}_${traitNest || 1}_${traitColor || 1}_0.png`;
+  const eggSrc = `/egg_${traitEggType}_${traitColor}.png`;
+  const displaySrc = tapCount >= 10 ? monsterSrc : eggSrc;
+  const nestSrc = tapCount >= 10 ? "/nest_0.png" : `/nest_${traitNest}.png`;
+  const patternSrc = tapCount >= 10 ? "/pattern_0.png" : `/pattern_${traitPattern}.png`;
+  const auraSrc = tapCount >= 10 ? `/aura_${traitPattern}.png` : "/aura_0.png";
+
+  // ▼ 未制覇かつ未確認の場合の警告画面
   if (!isAllScanned && !isConfirmed) {
     return (
       <>
@@ -154,7 +235,7 @@ export default function HatchPage() {
     );
   }
 
-  // ▼ 変更点：上の条件に引っかからなかった場合（クリア済み or 確認済み）は、この画面を返す
+  // ▼ 卵を割り進める画面
   return (
     <>
       <Header />
@@ -175,19 +256,27 @@ export default function HatchPage() {
           </h1>
 
           {/* たまごの表示領域（タップ可能） */}
-          <button 
+          <button
             onClick={handleTap}
             disabled={tapCount >= 10}
-            className={`relative mx-auto flex aspect-square w-full max-w-[280px] items-center justify-center rounded-full bg-blue-50 transition-transform ${tapCount < 10 ? "active:scale-95 active:bg-blue-100" : ""}`}
+            className={`relative mx-auto flex aspect-square w-full max-w-[280px] items-center justify-center rounded-full bg-blue-50 transition-transform ${
+              tapCount < 10 ? "active:scale-95 active:bg-blue-100" : ""
+            }`}
           >
-            {/* 10回タップしたらヒビ割れ画像を被せる等の演出ができます */}
-            <div className={`h-full w-full transition-opacity duration-300 ${tapCount >= 10 ? "opacity-50 blur-sm" : ""}`}>
-              <EggDisplay eggSrc={displaySrc} nestSrc={nestSrc} patternSrc={patternSrc} />
+            <div className="h-full w-full z-0">
+              <EggDisplay
+                eggSrc={displaySrc}
+                nestSrc={nestSrc}
+                patternSrc={patternSrc}
+                auraSrc={auraSrc}
+              />
             </div>
-            
+
             {tapCount >= 10 && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <p className="text-4xl font-black text-yellow-500 drop-shadow-lg rotate-12">ピキッ！</p>
+                <p className="text-4xl font-black text-yellow-500 drop-shadow-lg rotate-12">
+                  ピキッ！
+                </p>
               </div>
             )}
           </button>
