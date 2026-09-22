@@ -1,5 +1,5 @@
 // components/header.tsx
-import { Egg } from "lucide-react";
+import { Egg, Info } from "lucide-react";
 import Link from "next/link";
 
 export function Header() {
@@ -33,6 +33,19 @@ export function Header() {
           <span aria-hidden="true" className="text-[#EF3438]">G</span>
         </span>
 
+      </Link>
+
+      {/* アプリの説明ページへの入口 */}
+      <Link
+        href="/about"
+        aria-label="このアプリについて"
+        className="absolute top-1/2 right-3 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-[#E4F2EE] text-[#18366B] transition-colors hover:bg-[#D5E9E3] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18366B] sm:right-5"
+      >
+        <Info
+          aria-hidden="true"
+          className="h-5 w-5"
+          strokeWidth={2}
+        />
       </Link>
 
       {/* ヘッダー下部の赤い波線 */}
