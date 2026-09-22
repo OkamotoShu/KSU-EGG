@@ -10,10 +10,10 @@ export function Header() {
         aria-label="KSU EGG ホーム"
         className="flex items-center gap-2.5 rounded-xl px-3 py-2 transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B]"
       >
-        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#E4F2EE]">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FFF0C2]">
           <Egg
             aria-hidden="true"
-            className="h-7 w-7 text-[#269D9C]"
+            className="h-7 w-7 text-[#A96500]"
             strokeWidth={2.2}
           />
         </span>
