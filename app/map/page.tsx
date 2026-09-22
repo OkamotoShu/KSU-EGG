@@ -9,12 +9,12 @@ import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 // チェックアイコン位置
 const pins = [
-  { id: 1, x: 0, y: 0, cleared: false },
-  { id: 2, x: 55, y: 25, cleared: false },
-  { id: 3, x: 90, y: 65, cleared: false },
-  { id: 4, x: 30, y: 40, cleared: false },
-  { id: 5, x: 45, y: 25, cleared: false },
-  { id: 6, x: 70, y: 65, cleared: false },
+  { id: 1, x: 21, y: 35, cleared: false }, // 総合体育館
+  { id: 2, x: 56.5, y: 21, cleared: false }, // 神山天文台
+  { id: 3, x: 62.5, y: 24, cleared: false }, // サギタリウス館
+  { id: 4, x: 65, y: 34, cleared: false }, // 12号館 アーチ下
+  { id: 5, x: 36.2, y: 39, cleared: false }, // 神山ホール
+  { id: 6, x: 37, y: 43, cleared: false }, // 神山ホール ゴール
 ];
 
 export default function Map() {
