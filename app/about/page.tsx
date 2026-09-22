@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { Header } from "@/components/header";
 import { TutorialModal } from "@/components/tutorial_modal";
+import Image from "next/image";
+import labLogo from "@/public/labLog.png";
 
 export default function AboutPage() {
     const [showTutorial, setShowTutorial] = useState(false);
@@ -135,6 +137,8 @@ export default function AboutPage() {
                                 制作・お問い合わせ
                             </h2>
 
+
+
                             <dl className="mt-3 space-y-4 text-sm">
                                 <div>
                                     <dt className="font-bold text-[#65748B]">
@@ -152,6 +156,15 @@ export default function AboutPage() {
                                     <dd className="mt-1 leading-relaxed">
                                         ［問い合わせ先］
                                     </dd>
+                                </div>
+                                {/* 研究室のロゴ */}
+                                <div className="my-5 flex justify-center">
+                                    <Image
+                                        src={labLogo}
+                                        alt="研究室のロゴ"
+                                        sizes="(max-width: 320px) 70vw, 240px"
+                                        className="h-auto w-full max-w-[150px] object-contain"
+                                    />
                                 </div>
                             </dl>
                         </section>
