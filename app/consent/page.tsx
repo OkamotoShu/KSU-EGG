@@ -10,18 +10,26 @@ function ConsentContent() {
     const router = useRouter();
     const [agreed, setAgreed] = useState(false);
 
-    // 同意を保存して登録画面へ進む
-    const handleAccept = () => {
-        if (!agreed) return;
+    // 同意記録の保存状態
+    const [isSaving, setIsSaving] = useState(false);
+    const [consentError, setConsentError] = useState("");
+
+    // 保存が完了してから次の画面へ進む
+    const handleAccept = async () => {
+        if (!agreed || isSaving) return;
+
+        setIsSaving(true);
+        setConsentError("");
 
         try {
-            acceptConsent();
+            await acceptConsent();
             router.replace("/register");
         } catch (error) {
-            console.error("同意状態の保存に失敗しました:", error);
-            alert(
-                "同意状態を保存できませんでした。ブラウザーの保存設定を確認してください。"
+            console.error("同意記録の保存に失敗しました:", error);
+            setConsentError(
+                "保存できませんでした。通信状況を確認して、もう一度お試しください。"
             );
+            setIsSaving(false);
         }
     };
 
@@ -122,11 +130,17 @@ function ConsentContent() {
                     {/* 登録画面へ進む */}
                     <button
                         type="button"
-                        disabled={!agreed}
+                        disabled={!agreed || isSaving}
                         onClick={handleAccept}
                         className="min-h-11 rounded-full bg-[#FFBC39] px-6 py-2.5 text-sm font-extrabold text-[#18366B] transition-colors enabled:hover:bg-[#FFB020] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:cursor-not-allowed disabled:bg-[#E5E7EB] disabled:text-[#65748B]"
                     >
-                        つづける
+                        {isSaving ? "保存中..." : "つづける"}
+                        {/* 保存エラーを表示 */}
+                        {consentError && (
+                            <p role="alert" className="mb-2 text-sm text-[#B42332]">
+                                {consentError}
+                            </p>
+                        )}
                         <span aria-hidden="true" className="ml-2">→</span>
                     </button>
                 </div>
