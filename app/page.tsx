@@ -93,91 +93,154 @@ export default function Home() {
       <Header />
 
       {/* 画面全体の設定。justify-center を外し、中身のflex-1で調整します */}
-      <main className="flex min-h-dvh flex-col items-center bg-[#FFFCF3] px-5 pt-24 pb-28 text-[#18366B]">
-        <p
-          className="mb-4 flex items-center justify-center gap-3 text-xs font-extrabold tracking-[0.16em] text-[#A96500] sm:text-sm"
-          style={{ fontFamily: "var(--font-rounded), sans-serif" }}
-        >
-          <span aria-hidden="true" className="h-1 w-4 rounded-full bg-[#FFBC39]" />
+      <main className="flex h-dvh flex-col items-center gap-3 bg-[#FFFCF3] px-5 pt-24 pb-28 text-[#18366B]">
+        {/* 小さなサブタイトル */}
+        <p className="flex shrink-0 items-center justify-center gap-2 text-[10px] font-extrabold tracking-[0.16em] text-[#A96500] sm:text-xs">
+          <span
+            aria-hidden="true"
+            className="h-1 w-3 rounded-full bg-[#FFBC39]"
+          />
           MY LITTLE ADVENTURE
-          <span aria-hidden="true" className="h-1 w-4 rounded-full bg-[#FFBC39]" />
+          <span
+            aria-hidden="true"
+            className="h-1 w-3 rounded-full bg-[#FFBC39]"
+          />
         </p>
-        {/* 名前と左右切り替え */}
-        <div className="grid w-full max-w-md shrink-0 grid-cols-[44px_minmax(0,1fr)_44px] items-center gap-3">
+
+        {/* 木の看板とたまご型の切り替えボタン */}
+        <div className="grid w-full max-w-md shrink-0 grid-cols-[48px_minmax(0,1fr)_48px] items-center gap-3">
+          {/* 前のプレイヤー */}
           <button
             type="button"
             onClick={handlePrev}
             disabled={currentIndex === 0}
-            aria-label="前のプレイヤー"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#E4F2EE] transition-colors hover:bg-[#D5E9E3] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:invisible"
+            aria-label="前のプレイヤーのたまご"
+            className="relative flex h-14 w-12 -rotate-6 items-center justify-center rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 border-[#B8DBD1] bg-[#E4F2EE] shadow-[0_3px_0_#B8DBD1] transition-transform enabled:hover:rotate-0 enabled:active:translate-y-0.5 enabled:active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:opacity-30 motion-reduce:transition-none"
           >
-            <ChevronLeft aria-hidden="true" className="h-6 w-6" />
+            <span
+              aria-hidden="true"
+              className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-white"
+            />
+            <ChevronLeft
+              aria-hidden="true"
+              className="h-7 w-7"
+              strokeWidth={3}
+            />
           </button>
 
-          <h1
-            className="text-center text-[clamp(1.5rem,6vw,2rem)] leading-snug font-extrabold [overflow-wrap:anywhere]"
-            style={{ fontFamily: "var(--font-rounded), sans-serif" }}
+          {/* 木目調のネームプレート */}
+          <div
+            className="relative min-w-0 rounded-lg border border-[#A66D36] px-4 py-3 shadow-[0_3px_0_#946032]"
+            style={{
+              backgroundColor: "#E8BD80",
+              backgroundImage: `
+          repeating-linear-gradient(
+            2deg,
+            transparent 0px,
+            transparent 6px,
+            rgba(130, 76, 27, 0.12) 7px,
+            transparent 8px,
+            transparent 13px
+          ),
+          linear-gradient(
+            180deg,
+            #F3D29D 0%,
+            #E8BD80 55%,
+            #DFA96A 100%
+          )
+        `,
+            }}
           >
-            {currentName}さん
-          </h1>
+            {/* 看板の留め具 */}
+            <span
+              aria-hidden="true"
+              className="absolute top-1/2 left-1.5 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[#946032]"
+            />
+            <span
+              aria-hidden="true"
+              className="absolute top-1/2 right-1.5 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[#946032]"
+            />
 
+            <h1
+              aria-live="polite"
+              aria-atomic="true"
+              className="text-center text-lg leading-snug font-extrabold text-[#50331D] [overflow-wrap:anywhere] sm:text-xl"
+            >
+              {currentName}さん
+            </h1>
+          </div>
+
+          {/* 次のプレイヤー */}
           <button
             type="button"
             onClick={handleNext}
             disabled={currentIndex >= nicknames.length - 1}
-            aria-label="次のプレイヤー"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-[#E4F2EE] transition-colors hover:bg-[#D5E9E3] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:invisible"
+            aria-label="次のプレイヤーのたまご"
+            className="relative flex h-14 w-12 rotate-6 items-center justify-center rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 border-[#E8C570] bg-[#FFE5A3] shadow-[0_3px_0_#E8C570] transition-transform enabled:hover:rotate-0 enabled:active:translate-y-0.5 enabled:active:shadow-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:opacity-30 motion-reduce:transition-none"
           >
-            <ChevronRight aria-hidden="true" className="h-6 w-6" />
+            <span
+              aria-hidden="true"
+              className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-white"
+            />
+            <ChevronRight
+              aria-hidden="true"
+              className="h-7 w-7"
+              strokeWidth={3}
+            />
           </button>
         </div>
 
-        {/* 蛋のメイン展示区域 */}
-        <div className="flex w-full flex-1 items-center justify-center py-6">
-          <div
-            className="relative aspect-square w-full"
-            style={{
-              maxWidth: "min(480px, max(220px, calc(100dvh - 300px)))",
-            }}
-          >
-            {/* 柔和の淡い黄色背景 */}
+        {/* 残りの幅と高さの両方に合わせてたまごを拡大 */}
+        <div
+          className="relative min-h-0 w-full max-w-lg flex-1"
+          style={{ containerType: "size" }}
+        >
+          <div className="absolute inset-0 flex items-center justify-center">
             <div
-              aria-hidden="true"
-              className="absolute inset-x-0 top-[8%] bottom-[3%] rounded-[46%_54%_49%_51%/53%_45%_55%_47%] bg-[#FFF0C2]"
-            />
-
-            {/* 蛋、巢と花柄の表示 */}
-            <div className="absolute inset-0">
-              <EggDisplay
-                eggSrc={eggSrc}
-                nestSrc={nestSrc}
-                patternSrc={patternSrc}
+              className="relative aspect-square"
+              style={{
+                width: "min(100cqw, 100cqh, 480px)",
+              }}
+            >
+              {/* 淡い黄色の背景 */}
+              <div
+                aria-hidden="true"
+                className="absolute inset-x-0 top-[8%] bottom-[3%] rounded-[46%_54%_49%_51%/53%_45%_55%_47%] bg-[#FFF0C2]"
               />
+
+              {/* 現在のたまご・巣・模様 */}
+              <div className="absolute inset-0">
+                <EggDisplay
+                  eggSrc={eggSrc}
+                  nestSrc={nestSrc}
+                  patternSrc={patternSrc}
+                />
+              </div>
             </div>
           </div>
         </div>
 
-        {/* プレイヤー選択 */}
+        {/* たまご型のプレイヤー表示 */}
         {nicknames.length > 1 && (
           <div
             role="group"
             aria-label="プレイヤーを選ぶ"
-            className="flex max-w-md shrink-0 flex-wrap justify-center"
+            className="flex shrink-0 items-center justify-center"
           >
-            {nicknames.map((name, idx) => (
+            {nicknames.map((name, index) => (
               <button
                 key={name}
                 type="button"
-                onClick={() => setCurrentIndex(idx)}
+                onClick={() => setCurrentIndex(index)}
                 aria-label={`${name}のたまごを表示`}
-                aria-pressed={idx === currentIndex}
+                aria-pressed={index === currentIndex}
                 className="flex h-11 w-11 items-center justify-center rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18366B]"
               >
                 <span
                   aria-hidden="true"
-                  className={`h-2.5 rounded-full transition-all ${idx === currentIndex
-                    ? "w-6 bg-[#18366B]"
-                    : "w-2.5 bg-[#18366B]/20"
+                  className={`h-4 w-3 rounded-[50%_50%_45%_45%/60%_60%_40%_40%] transition-colors ${index === currentIndex
+                      ? "bg-[#18366B]"
+                      : "bg-[#18366B]/20"
                     }`}
                 />
               </button>
