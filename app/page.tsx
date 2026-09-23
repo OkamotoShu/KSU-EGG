@@ -1,13 +1,15 @@
 // app/page.tsx
 "use client";
 
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { EggDisplay } from "@/components/egg_display";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { getUserData } from "@/lib/dbActions";
 import { TutorialModal } from "@/components/tutorial_modal";
 
 export default function Home() {
@@ -16,8 +18,10 @@ export default function Home() {
   const [nicknames, setNicknames] = useState<string[]>([]);
   const [eggDataMap, setEggDataMap] = useState<Record<string, number[]>>({});
   const [scannedQRs, setScannedQRs] = useState<number[]>([0, 0, 0, 0, 0, 0]);
+  const [arMarks, setARMarks] = useState<Record<string, 1 | 2 | 3>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
 
   const closeTutorial = () => {
@@ -25,25 +29,51 @@ export default function Home() {
     setShowTutorial(false);
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const data = await getUserData();
+  const loadUserData = async (uid: string) => {
+    setIsLoading(true);
+    setFetchError(null);
 
-      if (data && data.nickName) {
-        setNicknames(data.orderedNames || Object.keys(data.nickName));
-        // ▼ 取得したデータをそのまま保存
-        setEggDataMap(data.nickName);
-        setScannedQRs(data.scannedQRs || [0, 0, 0, 0, 0, 0]);
-        if (!localStorage.getItem("tutorialSeen")) {
-          setShowTutorial(true);
+    try {
+      const userRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        if (data && data.nickName) {
+          setNicknames(data.orderedNames || Object.keys(data.nickName));
+          setEggDataMap(data.nickName);
+          setScannedQRs(data.scannedQRs || [0, 0, 0, 0, 0, 0]);
+          setARMarks(data.arMarks || {});
+          
+          if (!localStorage.getItem("tutorialSeen")) {
+            setShowTutorial(true);
+          }
+          setIsLoading(false);
+          return;
         }
+      }
+
+      // ドキュメントが存在しない、または nickName が未設定の場合のみ登録画面へ
+      router.push("/register");
+    } catch (error) {
+      console.error("ユーザーデータ取得エラー:", error);
+      // 通信エラー時は登録画面に飛ばさず、エラーメッセージをセットする
+      setFetchError("データの読み込みに失敗しました。電波の良いところで再試行してください。");
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Firebase Authのログイン状態が復元されるのを待ってからデータを取りに行く
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        loadUserData(user.uid);
       } else {
         router.push("/register");
       }
-      setIsLoading(false);
-    };
+    });
 
-    fetchData();
+    return () => unsubscribe();
   }, [router]);
 
   const handlePrev = () => {
@@ -57,6 +87,28 @@ export default function Home() {
       setCurrentIndex((prev) => prev + 1);
     }
   };
+
+  if (fetchError) {
+    return (
+      <main className="flex min-h-dvh flex-col items-center justify-center bg-[#FFFCF3] px-5 text-[#18366B]">
+        <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-md">
+          <p className="mb-2 text-3xl">⚠️</p>
+          <h2 className="mb-3 text-lg font-bold text-[#50331D]">通信エラー</h2>
+          <p className="mb-6 text-sm text-[#65748B]">{fetchError}</p>
+          <button
+            type="button"
+            onClick={() => {
+              if (auth.currentUser) loadUserData(auth.currentUser.uid);
+              else window.location.reload();
+            }}
+            className="w-full rounded-xl bg-[#FFBC39] py-3 font-extrabold text-[#18366B] shadow-md transition hover:bg-[#FFB020] active:scale-95"
+          >
+            もう一度試す
+          </button>
+        </div>
+      </main>
+    );
+  }
 
   if (isLoading) {
     return (

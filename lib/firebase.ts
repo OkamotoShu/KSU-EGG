@@ -1,6 +1,6 @@
 // lib/firebase.ts
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
@@ -15,6 +15,13 @@ const firebaseConfig = {
 // Next.jsのSSR/SSG等で複数回初期化されるのを防ぐ
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Firestoreのインスタンスをエクスポート
-export const db = getFirestore(app);
+export const db =
+  typeof window !== "undefined"
+    ? initializeFirestore(app, {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
+      })
+    : getFirestore(app);
+
 export const auth = getAuth(app);

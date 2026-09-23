@@ -12,17 +12,15 @@ import {
   TitlePhase,
   QuestionPhase,
   ConfirmPhase,
-  SuccessPhase,   // 新規追加
-  EggDisplay      // 新規追加
+  SuccessPhase,
+  EggDisplay
 } from "@/components/event-phases";
 import { EventARPhase } from "@/components/event-ar-phase";
 
-// ▼ 'success' フェーズを追加
 type Phase = "title" | "question" | "confirm" | "arChoice" | "ar" | "success";
 
 type CharacterType = 1 | 2 | 3;
 
-// event文書のcharacterを読み取り、未設定ならイベント順で固定する
 function getEventCharacter(value: unknown, eventIndex: number): CharacterType {
   if (value === 1 || value === "1" || value === "koyamachan") return 1;
   if (value === 2 || value === "2" || value === "musubukun") return 2;
@@ -44,7 +42,6 @@ function EventContent() {
   const [eventTitle, setEventTitle] = useState("");
   const [question, setQuestion] = useState("");
   const [choices, setChoices] = useState<string[]>([]);
-  // ▼ 成功時のメッセージステートを追加
   const [successMessage, setSuccessMessage] = useState("");
   const [eventCharacter, setEventCharacter] = useState<CharacterType>(1);
 
@@ -56,10 +53,7 @@ function EventContent() {
   const [previousEggDataMap, setPreviousEggDataMap] = useState<Record<string, number[]>>({});
   const [arMarks, setARMarks] = useState<Record<string, Array<CharacterType>>>({});
 
-  // 確認画面から個別に回答を変更しているか
   const [isEditing, setIsEditing] = useState(false);
-
-  // 画面切り替え直後の連続操作を防ぐ
   const navigationLockRef = useRef(0);
 
   const lockNavigation = () => {
@@ -69,19 +63,26 @@ function EventContent() {
   const isNavigationLocked = () =>
     isUpdating || Date.now() < navigationLockRef.current;
 
+  // ▼ 変更点：ログイン・登録判定とリダイレクト処理
   useEffect(() => {
     if (!qrIdParam) {
       router.push("/");
       return;
     }
 
+    // QRコードのURL（replayパラメータ含む）をエンコードしてリダイレクト用のパスを作成
+    const replayQuery = isReplay ? "&replay=1" : "";
+    const currentUrl = `/event?qrId=${qrIdParam}${replayQuery}`;
+    const redirectPath = `/register?redirect=${encodeURIComponent(currentUrl)}`;
+
     const fetchEventData = async (user: User) => {
       try {
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
 
-        if (!userSnap.exists()) {
-          router.push("/register");
+        // Firestoreにデータがない、または nickName が未設定なら登録画面へ
+        if (!userSnap.exists() || !userSnap.data()?.nickName) {
+          router.push(redirectPath);
           return;
         }
 
@@ -106,7 +107,6 @@ function EventContent() {
         ));
 
         const scannedQRs: number[] = data.scannedQRs || [0, 0, 0, 0, 0, 0];
-        // 読み取り済みARの再体験では、QR番号に対応するイベントを開く
         const total = isReplay
           ? parseInt(qrIdParam, 10)
           : scannedQRs.reduce((sum, current) => sum + current, 0);
@@ -120,14 +120,12 @@ function EventContent() {
           setEventTitle(eventData.title || "イベント発生！");
           setQuestion(eventData.content);
           setChoices(eventData.select || []);
-          // ▼ DBの success フィールドを取得（なければデフォルト文言）
           setSuccessMessage(eventData.success || "たまごの様子が変わった！");
           setEventCharacter(getEventCharacter(eventData.character, total));
           if (isReplay) {
             setPhase("ar");
             return;
           }
-          // 第5イベントはひび画像のタイトルを挟まず、ARの選択へ直接進む
           if (total === 4) setPhase("arChoice");
         } else {
           setEventTitle("エラー");
@@ -147,58 +145,47 @@ function EventContent() {
         setCurrentUser(user);
         fetchEventData(user);
       } else {
-        router.push("/register");
+        // 未ログインの場合も redirect パラメータ付きで登録画面へ
+        router.push(redirectPath);
       }
     });
 
     return () => unsubscribe();
   }, [isReplay, qrIdParam, router]);
 
-  // 選択内容を保存するだけで、次の人には進まない
   const handleChoiceClick = (choiceIndex: number) => {
     if (isNavigationLocked()) return;
-
     const name = nicknames[currentPlayerIndex];
     if (!name) return;
-
     setTempAnswers((previous) => ({
       ...previous,
       [name]: choiceIndex + 1,
     }));
   };
 
-  // 前のプレイヤーに戻る
   const handlePrevious = () => {
     if (isNavigationLocked() || currentPlayerIndex === 0) return;
-
     lockNavigation();
     setCurrentPlayerIndex((previous) => previous - 1);
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-  // 次のプレイヤー、または確認画面へ進む
   const handleNextPlayer = () => {
     if (isNavigationLocked()) return;
-
     const name = nicknames[currentPlayerIndex];
     if (!tempAnswers[name]) return;
-
     lockNavigation();
-
     if (isEditing || currentPlayerIndex === nicknames.length - 1) {
       setIsEditing(false);
       setPhase("confirm");
     } else {
       setCurrentPlayerIndex((previous) => previous + 1);
     }
-
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-  // 確認画面で指定したプレイヤーの回答を変更
   const handleEditPlayer = (index: number) => {
     if (isNavigationLocked()) return;
-
     lockNavigation();
     setCurrentPlayerIndex(index);
     setIsEditing(true);
@@ -207,7 +194,6 @@ function EventContent() {
   };
 
   const prepareARChoice = () => {
-    // 第5イベントは回答を増やさず、現在のたまごを三人で目覚めさせる
     if (totalScans === 4) {
       setPhase("arChoice");
       return;
@@ -217,7 +203,6 @@ function EventContent() {
 
   const handleConfirmSave = () => {
     if (isUpdating || !currentUser || !qrIdParam) return;
-    // ARではFirestore更新前の最新回答を使う。完了時にまとめて保存する
     const previewData = Object.fromEntries(
       Object.entries(eggDataMap).map(([name, answers]) => [name, [...answers]])
     );
@@ -229,7 +214,6 @@ function EventContent() {
     setPhase("arChoice");
   };
 
-  // AR完了またはスキップ後に、回答とQRの状態をまとめて保存する
   const handleEventComplete = async (awardMark: boolean) => {
     if (isUpdating || !currentUser || !qrIdParam) return;
     setIsUpdating(true);
@@ -277,7 +261,6 @@ function EventContent() {
     return <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />;
   }
 
-  // --- イベント中の画像パス算出 (Question/Title フェーズ用) ---
   const currentName = nicknames[currentPlayerIndex] || nicknames[0];
   const userAnswers = eggDataMap[currentName] || [];
 
@@ -370,7 +353,6 @@ function EventContent() {
               ? savedAnswers.map((value, index) => index <= totalScans ? value : 0)
               : savedAnswers;
             const previousAnswers = previousEggDataMap[name] || [];
-            // p03では選んだ色のたまごを使って交流を始める
             const arBeforeColor = totalScans === 2
               ? answers[2]
               : previousAnswers[2];
@@ -397,13 +379,11 @@ function EventContent() {
         />
       )}
 
-      {/* ▼ 決定後の結果表示画面 */}
       {phase === "success" && (
         <SuccessPhase
           successMessage={successMessage}
           onFinish={() => router.push("/")}
         >
-          {/* 人数に応じてたまごを配置 */}
           <div
             className={`my-3 grid grid-cols-2 justify-items-center gap-x-3 gap-y-2 ${nicknames.length === 1 ? "mx-auto max-w-xs" : ""
               }`}
@@ -414,12 +394,10 @@ function EventContent() {
               const eColor = ans[2] || 0;
               const ePattern = ans[3] || 0;
 
-              // 3人の場合は最初の1人を上段中央に配置
               const centered =
                 nicknames.length === 1 ||
                 (nicknames.length === 3 && index === 0);
 
-              // 2段配置では画像の高さを抑える
               const sizeClass =
                 nicknames.length === 1
                   ? "max-w-[min(260px,30dvh)]"
@@ -442,7 +420,6 @@ function EventContent() {
                     sizeClass={sizeClass}
                   />
 
-                  {/* 木目調のネームプレート */}
                   <div
                     className="relative mt-1 w-full max-w-[150px] rounded-md border border-[#A66D36] px-5 py-2 shadow-[0_2px_0_#946032]"
                     style={{
@@ -465,7 +442,6 @@ function EventContent() {
             `,
                     }}
                   >
-                    {/* 看板の留め具 */}
                     <span
                       aria-hidden="true"
                       className="absolute top-1/2 left-2 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[#946032]"

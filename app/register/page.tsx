@@ -1,8 +1,8 @@
 // app/register/page.tsx
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, Suspense } from "react"; // ▼ Suspense を追加
+import { useRouter, useSearchParams } from "next/navigation"; // ▼ useSearchParams を追加
 import { auth, db } from "@/lib/firebase";
 import { signInAnonymously } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
@@ -15,7 +15,10 @@ function RegisterContent() {
   const [playerCount, setPlayerCount] = useState<number>(1);
   const [nicknames, setNicknames] = useState<string[]>([""]);
   const [isLoading, setIsLoading] = useState(false);
+  
   const router = useRouter();
+  const searchParams = useSearchParams(); // ▼ 追加: URLのパラメータを取得
+  const redirectUrl = searchParams.get("redirect"); // ▼ 追加: "redirect" の値を取り出す
 
   const handlePlayerCountChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const count = parseInt(e.target.value, 10);
@@ -50,7 +53,7 @@ function RegisterContent() {
       return;
     }
 
-    const uniqueNames = new Set(nicknames.map(name => name.trim()));
+    const uniqueNames = new Set(nicknames.map((name) => name.trim()));
     if (uniqueNames.size !== nicknames.length) {
       alert("ニックネームはそれぞれ別のものを入力してください。");
       return;
@@ -66,11 +69,10 @@ function RegisterContent() {
         nickNameMap[name.trim()] = [0, 0, 0, 0, 0];
       });
 
-      // ▼ ここで dev: 0 を追加しています
       await setDoc(doc(db, "users", user.uid), {
         player: playerCount,
         nickName: nickNameMap,
-        orderedNames: nicknames.map(name => name.trim()),
+        orderedNames: nicknames.map((name) => name.trim()),
         dev: 0,
         scannedQRs: [0, 0, 0, 0, 0, 0],
         createdAt: new Date(),
@@ -78,7 +80,12 @@ function RegisterContent() {
 
       await postCollectionInLogs("アプリ登録", "登録画面", "成功");
 
-router.replace("/");
+      // ▼ 変更: 登録完了後の遷移先を条件分岐
+      if (redirectUrl) {
+        router.replace(redirectUrl); // QRコードから来た場合はイベント画面に戻す
+      } else {
+        router.replace("/"); // 通常アクセスの場合はホーム画面へ
+      }
     } catch (error) {
       await postCollectionInLogs("アプリ登録", "登録画面", `失敗: ${error}`);
       console.error("登録エラー:", error);
@@ -100,9 +107,7 @@ router.replace("/");
               MY LITTLE ADVENTURE
             </p>
 
-            <h1 className="text-3xl font-extrabold">
-              ゲームのじゅんび
-            </h1>
+            <h1 className="text-3xl font-extrabold">ゲームのじゅんび</h1>
 
             <p className="mt-3 text-sm leading-relaxed">
               あそぶ人数となまえを教えてね
@@ -119,9 +124,7 @@ router.replace("/");
               disabled={isLoading}
               className="flex min-w-0 flex-col gap-6 disabled:opacity-60"
             >
-              <legend className="sr-only">
-                参加者の情報
-              </legend>
+              <legend className="sr-only">参加者の情報</legend>
 
               {/* 一緒に遊ぶ人数 */}
               <div>
@@ -219,7 +222,6 @@ router.replace("/");
               </button>
             </fieldset>
 
-            {/* 処理状況を読み上げ */}
             <p role="status" className="sr-only">
               {isLoading ? "じゅんび中です。少し待ってね。" : ""}
             </p>
@@ -230,11 +232,17 @@ router.replace("/");
   );
 }
 
-// 登録済みの場合はフォームを表示しない
+// ▼ 変更: useSearchParams を使うため Suspense でラップする
 export default function RegisterPage() {
   return (
     <EntryGuard page="register">
-      <RegisterContent />
+      <Suspense fallback={
+        <div className="flex min-h-dvh items-center justify-center bg-[#FFFCF3]">
+          <p className="text-[#18366B] font-bold">読み込み中...</p>
+        </div>
+      }>
+        <RegisterContent />
+      </Suspense>
     </EntryGuard>
   );
 }
