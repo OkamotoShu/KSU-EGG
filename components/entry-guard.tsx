@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { doc, getDocFromServer } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { hasAcceptedConsent } from "@/lib/consent";
+// import { hasAcceptedConsent } from "@/lib/consent"; ← 不要になるので削除！
 
 type EntryGuardProps = {
     page: "consent" | "register";
@@ -22,7 +22,6 @@ export function EntryGuard({ page, children }: EntryGuardProps) {
         let active = true;
         let requestId = 0;
 
-        // 認証状態の復元を待ってから登録状況を確認
         const unsubscribe = onAuthStateChanged(
             auth,
             async (user) => {
@@ -41,29 +40,29 @@ export function EntryGuard({ page, children }: EntryGuardProps) {
 
                     if (!active || currentRequest !== requestId) return;
 
-                    // 登録済みなら、どちらのページも表示しない
-                    // Firestoreの同意記録を確認
-                    const accepted = user
-                        ? await hasAcceptedConsent(user.uid)
-                        : false;
+                    // ▼ 変更点1: DB通信をやめ、ブラウザの一時メモ(sessionStorage)を確認
+                    const accepted = sessionStorage.getItem("terms_agreed") === "true";
 
-                    if (!active || currentRequest !== requestId) return;
+                    // ▼ 変更点2: QRコードからのリダイレクトパラメータ（?redirect=...）を保持
+                    const search = window.location.search;
+
+                    // ▼ 変更点3: シンプルになった判定ロジック
+                    if (isRegistered) {
+                        // 既に登録完了している人はどちらのページも用済みなのでホームへ
+                        router.replace("/");
+                        return;
+                    }
 
                     if (page === "consent") {
-                        // 同意済みなら登録状況に応じて移動
+                        // 同意画面にいるが、すでに同意済みの場合は登録画面へ（パラメータを引き継ぐ）
                         if (accepted) {
-                            router.replace(isRegistered ? "/" : "/register");
+                            router.replace(`/register${search}`);
                             return;
                         }
-                    } else {
-                        // 未同意なら、登録済みでも先に同意画面へ移動
+                    } else if (page === "register") {
+                        // 登録画面にいるが、未同意の場合は同意画面へ戻す（パラメータを引き継ぐ）
                         if (!accepted) {
-                            router.replace("/consent");
-                            return;
-                        }
-
-                        if (isRegistered) {
-                            router.replace("/");
+                            router.replace(`/consent${search}`);
                             return;
                         }
                     }

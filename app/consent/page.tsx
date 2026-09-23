@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Header } from "@/components/header";
 import { EntryGuard } from "@/components/entry-guard";
-import { acceptConsent } from "@/lib/consent";
 
 function ConsentContent() {
     const router = useRouter();
@@ -17,18 +16,19 @@ function ConsentContent() {
     // 保存が完了してから次の画面へ進む
     const handleAccept = async () => {
         if (!agreed || isSaving) return;
-
         setIsSaving(true);
         setConsentError("");
 
         try {
-            await acceptConsent();
-            router.replace("/register");
+            // DB通信（acceptConsent）はやめ、ブラウザのメモリに記録するだけ
+            sessionStorage.setItem("terms_agreed", "true");
+            
+            // 登録画面へ移動（パラメータを引き継ぐ）
+            const search = window.location.search;
+            router.replace(`/register${search}`);
         } catch (error) {
-            console.error("同意記録の保存に失敗しました:", error);
-            setConsentError(
-                "保存できませんでした。通信状況を確認して、もう一度お試しください。"
-            );
+            console.error("遷移に失敗しました:", error);
+            setConsentError("エラーが発生しました。もう一度お試しください。");
             setIsSaving(false);
         }
     };

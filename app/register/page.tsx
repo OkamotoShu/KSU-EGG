@@ -10,6 +10,7 @@ import { Header } from "@/components/header";
 import { postCollectionInLogs } from "@/lib/dbActions";
 import { ChevronDown } from "lucide-react";
 import { EntryGuard } from "@/components/entry-guard";
+import { serverTimestamp } from "firebase/firestore"; // ←上部にインポート追加
 
 function RegisterContent() {
   const [playerCount, setPlayerCount] = useState<number>(1);
@@ -77,6 +78,16 @@ function RegisterContent() {
         scannedQRs: [0, 0, 0, 0, 0, 0],
         createdAt: new Date(),
       });
+
+      // ▼ 追加: 2. ここでsignature（同意記録）も一緒に保存する
+      await setDoc(doc(db, "signature", user.uid), {
+        uid: user.uid,
+        date: serverTimestamp(),
+        userAgent: navigator.userAgent, // ブラウザ情報（同意の証拠力アップ）
+      });
+
+      // ▼ 追加: 3. 一時メモはお役御免なので消去する
+      sessionStorage.removeItem("terms_agreed");
 
       await postCollectionInLogs("アプリ登録", "登録画面", "成功");
 
