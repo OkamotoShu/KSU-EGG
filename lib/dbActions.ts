@@ -1,7 +1,7 @@
 // lib/dbActions.ts
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth"; // User型を追加インポート
-import { doc, getDoc, DocumentData, collection, addDoc } from "firebase/firestore";
+import { doc, getDoc, DocumentData, collection, addDoc, FieldPath, updateDoc } from "firebase/firestore";
 
 /**
  * 現在のログインユーザーを取得する（認証完了まで待機するヘルパー関数）
@@ -45,6 +45,17 @@ export async function getUserData(): Promise<DocumentData | null> {
     console.error("ユーザーデータの取得に失敗しました:", error);
     return null;
   }
+}
+
+/**
+ * ARで獲得した印を、プレイヤーごとに保存する
+ */
+export async function saveARMark(playerName: string, markType: 1 | 2 | 3) {
+  const user = await getCurrentUser();
+  if (!user) throw new Error("ログインしてください");
+
+  const userRef = doc(db, "users", user.uid);
+  await updateDoc(userRef, new FieldPath("arMarks", playerName), markType);
 }
 
 // ▼ 追加: ログを保存する関数

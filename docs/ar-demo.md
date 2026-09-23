@@ -17,6 +17,12 @@ LAN IPをHTTPで開く方法ではカメラが利用できないため、HTTPS�
 - ユーザー提供の `public/ar/card.png` と `targets.mind` を使用する。
 - `targets.mind` の先頭のターゲットを追跡する。
 - 表示素材は `public/egg_1_1.png`。3Dモデルではなく平面の画像。
+- 登録済みプレイヤーは回答配列の2番目（巣の選択）でキャラクターを決める。
+  `1: koyamachan`（たまごの周囲を一周）、`2: musubukun`（抱きしめてハート）、
+  `3: yamachan`（帽子として着地し、魔法陣で浮かせる）。未登録・未選択時は1番を使う。
+- yamachanの最初の魔法後は、帽子と星形の魔法印をARセッション中保持する。
+- たまごのタップ時にWeb Audio APIで短い効果音を端末内生成する。
+- 多人の場合はカメラ起動前に表示するプレイヤーを選ぶ。
 - 認証・Firestore・ゲーム進行は変更しない。
 - カメラ映像は端末内で処理し、アップロードしない。
 - MindAR 1.2.5 / Three.js 0.160.0 は `public/ar/vendor` から配信する。
@@ -34,4 +40,4 @@ LAN IPをHTTPで開く方法ではカメラが利用できないため、HTTPS�
 
 同梱カードとターゲットの対応・実際の追跡品質は実機で確認が必要。
 
-操作判定の自動テスト: `node --test tests/ar-interaction.test.mjs`
+操作判定の自動テスト: `node --test tests/ar-interaction.test.mjs tests/ar-character-action.test.mjs`
