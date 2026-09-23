@@ -19,6 +19,10 @@ export default function HatchPage() {
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
   const [isFinished, setIsFinished] = useState(false);
+  const [isReplay] = useState(() =>
+    typeof window !== "undefined"
+    && new URLSearchParams(window.location.search).get("replay") === "1"
+  );
 
   useEffect(() => {
     const load = async (user: User) => {
@@ -114,9 +118,9 @@ export default function HatchPage() {
               marks: [],
             };
           })}
-          isSaving={isUpdating}
-          onComplete={() => void finishHatching()}
-          onSkip={() => void finishHatching()}
+          isSaving={isReplay ? false : isUpdating}
+          onComplete={() => isReplay ? router.push("/") : void finishHatching()}
+          onSkip={() => isReplay ? router.push("/") : void finishHatching()}
         />
       </>
     );
