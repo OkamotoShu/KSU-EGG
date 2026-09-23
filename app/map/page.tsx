@@ -3,25 +3,67 @@
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
 
 // チェックアイコン位置
 const pins = [
-  { id: 1, x: 21, y: 35, cleared: false }, // 総合体育館
-  { id: 2, x: 56.5, y: 21, cleared: false }, // 神山天文台
-  { id: 3, x: 62.5, y: 24, cleared: false }, // サギタリウス館
-  { id: 4, x: 65, y: 34, cleared: false }, // 12号館 アーチ下
-  { id: 5, x: 36.2, y: 39, cleared: false }, // 神山ホール
-  { id: 6, x: 37, y: 43, cleared: false }, // 神山ホール ゴール
+  { id: 0, x: 21, y: 35 }, // 総合体育館
+  { id: 1, x: 56.5, y: 21 }, // 神山天文台
+  { id: 2, x: 62.5, y: 24 }, // サギタリウス館
+  { id: 3, x: 65, y: 34 }, // 12号館 アーチ下
+  { id: 4, x: 36.2, y: 39 }, // 神山ホール
+  { id: 5, x: 37, y: 43 }, // 神山ホール ゴール
 ];
 
 export default function Map() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [scannedQRs, setScannedQRs] = useState<number[]>([]);  // QR読み取り状態監視
+  
   // 関連画像
   const mapImage = `/mapImage.jpg`;
   const mapPin = `/mapPin.png`;
   const mapClearedPin = `/clearedPin.png`;
+
+  useEffect(() => {
+    const fetchScannedQRs = async (user: User) => {
+      try {
+        const userRef = doc(db, "users", user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          router.push("/register");
+          return;
+        }
+
+        const data = userSnap.data();
+
+        const scannedQRs: number[] = data.scannedQRs || [0, 0, 0, 0, 0, 0];
+
+        setScannedQRs(scannedQRs);
+        setIsLoading(false);
+      } catch (error) {
+        console.error("scannedQRs取得エラー:", error);
+      }
+    };
+    
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        fetchScannedQRs(user);
+      } else {
+        router.push("/register");
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (isLoading) {
+    return <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />;
+  }
 
   return (
     <>
@@ -55,7 +97,7 @@ export default function Map() {
                 {pins.map((pin) => (
                   <img
                     key={pin.id}
-                    src={pin.cleared ? mapClearedPin : mapPin}
+                    src={scannedQRs[pin.id] === 1 ? mapClearedPin : mapPin}
                     className="absolute w-[40px] h-[40px] -translate-x-1/2 -translate-y-1/2"
                     style={{
                       left: `${pin.x}%`,
