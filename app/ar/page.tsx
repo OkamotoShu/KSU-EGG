@@ -1,0 +1,104 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ArrowLeft, Camera, ScanLine } from "lucide-react";
+import card from "@/public/ar/card.png";
+
+type Status = "idle" | "starting" | "searching" | "found" | "error";
+
+export default function ARPage() {
+  const [status, setStatus] = useState<Status>("idle");
+  const [error, setError] = useState("");
+  const frameRef = useRef<HTMLIFrameElement>(null);
+  const active = status === "starting" || status === "searching" || status === "found";
+
+  useEffect(() => {
+    // 同じサイトのARフレームからの通知だけを受け付ける
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin || event.source !== frameRef.current?.contentWindow) return;
+      if (event.data?.type !== "ksu-ar") return;
+      if (["searching", "found"].includes(event.data.status)) {
+        setStatus(event.data.status);
+      } else if (event.data.status === "error") {
+        setError("カメラを開始できませんでした。カメラの許可と通信状況を確認してください。他のアプリでカメラを使用している場合は閉じてください。");
+        setStatus("error");
+      }
+    };
+    // 別のタブへ移動したらカメラも停止する
+    const onVisibility = () => {
+      if (document.hidden) setStatus("idle");
+    };
+    const onPageHide = () => setStatus("idle");
+    window.addEventListener("message", onMessage);
+    window.addEventListener("pagehide", onPageHide);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("message", onMessage);
+      window.removeEventListener("pagehide", onPageHide);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (status !== "starting") return;
+    const timeout = window.setTimeout(() => {
+      setError("準備に時間がかかっています。カメラの許可を確認し、もう一度お試しください。");
+      setStatus("error");
+    }, 60000);
+    return () => window.clearTimeout(timeout);
+  }, [status]);
+
+  const start = () => {
+    if (active) return;
+    if (!window.isSecureContext || !navigator.mediaDevices?.getUserMedia) {
+      setError("カメラを使うにはHTTPSのURLで開いてください。パソコンではlocalhostでも試せます。");
+      setStatus("error");
+      return;
+    }
+    setError("");
+    setStatus("starting");
+  };
+
+  return (
+    <main className="relative flex min-h-dvh flex-col bg-[#FFFCF3] text-[#18366B]">
+      {active ? (
+        <>
+          {/* フレームを外すとカメラ・ワーカーも破棄される */}
+          <iframe ref={frameRef} src="/ar/viewer.html" title="ARカメラ" allow="camera" className="fixed inset-0 h-dvh w-full border-0 bg-[#18366B]" />
+          <div className="fixed inset-x-0 top-0 z-10 flex items-center justify-between gap-3 bg-[#FFFCF3]/95 px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-3">
+            <p role="status" className="text-sm font-bold">
+              {status === "starting" ? "カメラを準備しています..." : status === "found" ? "たまごを見つけた！" : "カード全体をカメラに映してね"}
+            </p>
+            <button onClick={() => setStatus("idle")} className="min-h-11 shrink-0 rounded-full bg-[#FFE5A3] px-5 font-bold">終了</button>
+          </div>
+          <p className="fixed inset-x-4 bottom-6 z-10 mx-auto max-w-md rounded-2xl bg-[#FFFCF3]/95 p-4 text-center text-sm">
+            {status === "found" ? "たまごをタップしてね！ 星が出てくるよ" : "明るい場所で、カードから少し離してね"}
+          </p>
+        </>
+      ) : (
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-5 pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+          <Link href="/about" className="mb-5 inline-flex min-h-11 items-center gap-2 self-start rounded-xl px-2 text-sm font-bold"><ArrowLeft className="h-4 w-4" />アプリについて</Link>
+          <div className="text-center">
+            <p className="text-xs font-extrabold tracking-widest text-[#A96500]">KSU EGG · AR</p>
+            <h1 className="mt-2 text-2xl font-extrabold">カードから、たまご！</h1>
+            <p className="mt-3 text-sm leading-7">このカードにカメラを向けると、<br />ピンクのたまごがあらわれるよ。</p>
+          </div>
+          <div className="my-5 rounded-3xl border border-[#18366B]/10 bg-white p-4">
+            <Image src={card} alt="ARで読み取る黄色いたまごのカード" sizes="(max-width: 448px) 80vw, 360px" className="mx-auto h-48 w-full object-contain" />
+            <a href="/ar/card.png" target="_blank" rel="noreferrer" className="mt-3 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#E4F2EE] text-sm font-bold"><ScanLine className="h-4 w-4" />カードを大きく開く</a>
+          </div>
+          <ol className="mb-5 list-inside list-decimal space-y-2 text-sm leading-6">
+            <li>カードを印刷するか、別の画面に表示する。</li>
+            <li>下のボタンを押して、カメラを許可する。</li>
+            <li>カード全体を映して、少し待つ。</li>
+          </ol>
+          {error && <p role="alert" className="mb-4 rounded-2xl bg-[#FFF0EE] p-4 text-sm leading-6 text-[#B42332]">{error}</p>}
+          <button onClick={start} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#FFBC39] px-4 py-3 font-extrabold focus-visible:outline-2 focus-visible:outline-offset-4"><Camera className="h-5 w-5" />{status === "error" ? "もう一度ためす" : "カメラをはじめる"}</button>
+          <p className="mt-3 text-center text-xs leading-6 text-[#65748B]">体験版：平面のたまごイラストを表示します。<br />カメラ映像はこの端末内で処理します。</p>
+        </div>
+      )}
+    </main>
+  );
+}
