@@ -22,15 +22,15 @@ export function Header() {
         {/* 文字ごとにブランドカラーを設定 */}
         <span
           aria-label="KSU EGG"
-          className="inline-flex items-center text-2xl font-extrabold tracking-wide"
+          className="inline-flex items-center gap-0.5 text-2xl font-extrabold [paint-order:stroke_fill]"
         >
-          <span aria-hidden="true" className="text-[#EF3438]">K</span>
-          <span aria-hidden="true" className="text-[#23B4BA]">S</span>
-          <span aria-hidden="true" className="text-[#C4D700]">U</span>
+          <span aria-hidden="true" className="text-[#EF3438] [-webkit-text-stroke:3px_#A91F28]">K</span>
+          <span aria-hidden="true" className="text-[#23B4BA] [-webkit-text-stroke:3px_#137B80]">S</span>
+          <span aria-hidden="true" className="text-[#C4D700] [-webkit-text-stroke:3px_#7D8A00]">U</span>
 
-          <span aria-hidden="true" className="ml-2 text-[#123588]">E</span>
-          <span aria-hidden="true" className="text-[#F6AB00]">G</span>
-          <span aria-hidden="true" className="text-[#EF3438]">G</span>
+          <span aria-hidden="true" className="ml-1.5 text-[#123588] [-webkit-text-stroke:3px_#091E55]">E</span>
+          <span aria-hidden="true" className="text-[#F6AB00] [-webkit-text-stroke:3px_#A66C00]">G</span>
+          <span aria-hidden="true" className="text-[#EF3438] [-webkit-text-stroke:3px_#A91F28]">G</span>
         </span>
 
       </Link>
