@@ -216,6 +216,12 @@ function EventContent() {
 
   const handleEventComplete = async (awardMark: boolean) => {
     if (isUpdating || !currentUser || !qrIdParam) return;
+    const qrIndex = parseInt(qrIdParam, 10);
+    if (isNaN(qrIndex) || qrIndex < 0 || qrIndex > 5) {
+      alert("不正なQRコードです。");
+      router.push("/"); // 不正な場合はホームに戻す
+      return;
+    }
     setIsUpdating(true);
     try {
       const userRef = doc(db, "users", currentUser.uid);
@@ -228,7 +234,7 @@ function EventContent() {
         Object.entries(data.nickName || {}).map(([name, value]) => [name, [...(value as number[])]])
       );
       const newScannedQRs = [...(data.scannedQRs || [0, 0, 0, 0, 0, 0])];
-      newScannedQRs[parseInt(qrIdParam, 10)] = 1;
+      newScannedQRs[qrIndex] = 1;
       nicknames.forEach((name) => {
         const value = savedMarks[name];
         const currentMarks = (Array.isArray(value) ? value : [value])
