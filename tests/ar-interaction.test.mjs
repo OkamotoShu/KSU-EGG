@@ -59,17 +59,17 @@ test("repeated taps do not restart animation; completed animation can be trigger
   s.click();
   now = 1500;
   s.click();
-  s.interaction.update(1701);
+  s.interaction.update(2801);
   assert.ok(s.stars.every((star) => !star.visible));
   assert.equal(s.egg.rotation.z, 0);
-  now = 1800;
+  now = 2900;
   s.click();
-  s.interaction.update(1900);
+  s.interaction.update(3000);
   assert.ok(s.stars.some((star) => star.visible));
   s.interaction.dispose();
   assert.equal(s.anchor.group.children.length, 1);
   s.click();
-  s.interaction.update(1950);
+  s.interaction.update(3050);
   assert.equal(s.egg.rotation.z, 0);
 });
 

@@ -5,20 +5,54 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowLeft, Camera, ScanLine } from "lucide-react";
 import card from "@/public/ar/card.png";
+import { getUserData, saveARMark } from "@/lib/dbActions";
 
 type Status = "idle" | "starting" | "searching" | "found" | "error";
 
 export default function ARPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  const [players, setPlayers] = useState<Array<{ name: string; eggType: number; color: number; character: 1 | 2 | 3; hasMark: boolean }>>([]);
+  const [playerIndex, setPlayerIndex] = useState(0);
+  const [activeMark, setActiveMark] = useState(false);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const active = status === "starting" || status === "searching" || status === "found";
+  const player = players[playerIndex];
+
+  useEffect(() => {
+    // 登録済みなら、選択結果に対応するたまごとキャラクターを準備
+    void getUserData().then((data) => {
+      if (!data?.nickName) return;
+      const names: string[] = data.orderedNames || Object.keys(data.nickName);
+      setPlayers(names.map((name) => {
+        const answers = data.nickName[name] || [];
+        const character = ([1, 2, 3].includes(answers[1]) ? answers[1] : 1) as 1 | 2 | 3;
+        return {
+          name,
+          eggType: [1, 2].includes(answers[0]) ? answers[0] : 1,
+          character,
+          color: [1, 2, 3, 4].includes(answers[2]) ? answers[2] : 1,
+          hasMark: data.arMarks?.[name] === character,
+        };
+      }));
+    }).catch((loadError) => console.error("AR用データの取得に失敗しました:", loadError));
+  }, []);
 
   useEffect(() => {
     // 同じサイトのARフレームからの通知だけを受け付ける
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin || event.source !== frameRef.current?.contentWindow) return;
       if (event.data?.type !== "ksu-ar") return;
+      if (event.data.action === "mark-earned") {
+        const currentPlayer = players[playerIndex];
+        if (!currentPlayer || currentPlayer.hasMark || event.data.markType !== currentPlayer.character) return;
+        setPlayers((current) => current.map((item, index) => index === playerIndex ? { ...item, hasMark: true } : item));
+        void saveARMark(currentPlayer.name, currentPlayer.character).catch((saveError) => {
+          console.error("ARの印の保存に失敗しました:", saveError);
+          setPlayers((current) => current.map((item, index) => index === playerIndex ? { ...item, hasMark: false } : item));
+        });
+        return;
+      }
       if (["searching", "found"].includes(event.data.status)) {
         setStatus(event.data.status);
       } else if (event.data.status === "error") {
@@ -39,7 +73,7 @@ export default function ARPage() {
       window.removeEventListener("pagehide", onPageHide);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, []);
+  }, [playerIndex, players]);
 
   useEffect(() => {
     if (status !== "starting") return;
@@ -58,6 +92,7 @@ export default function ARPage() {
       return;
     }
     setError("");
+    setActiveMark(player?.hasMark ?? false);
     setStatus("starting");
   };
 
@@ -66,7 +101,13 @@ export default function ARPage() {
       {active ? (
         <>
           {/* フレームを外すとカメラ・ワーカーも破棄される */}
-          <iframe ref={frameRef} src="/ar/viewer.html" title="ARカメラ" allow="camera" className="fixed inset-0 h-dvh w-full border-0 bg-[#18366B]" />
+          <iframe
+            ref={frameRef}
+            src={`/ar/viewer.html?character=${player?.character ?? 1}&egg=${encodeURIComponent(`/egg_${player?.eggType ?? 1}_${player?.color ?? 1}.png`)}&mark=${activeMark ? 1 : 0}`}
+            title="ARカメラ"
+            allow="camera"
+            className="fixed inset-0 h-dvh w-full border-0 bg-[#18366B]"
+          />
           <div className="fixed inset-x-0 top-0 z-10 flex items-center justify-between gap-3 bg-[#FFFCF3]/95 px-4 pt-[calc(1rem+env(safe-area-inset-top))] pb-3">
             <p role="status" className="text-sm font-bold">
               {status === "starting" ? "カメラを準備しています..." : status === "found" ? "たまごを見つけた！" : "カード全体をカメラに映してね"}
@@ -74,7 +115,7 @@ export default function ARPage() {
             <button onClick={() => setStatus("idle")} className="min-h-11 shrink-0 rounded-full bg-[#FFE5A3] px-5 font-bold">終了</button>
           </div>
           <p className="fixed inset-x-4 bottom-6 z-10 mx-auto max-w-md rounded-2xl bg-[#FFFCF3]/95 p-4 text-center text-sm">
-            {status === "found" ? "たまごをタップしてね！ 星が出てくるよ" : "明るい場所で、カードから少し離してね"}
+            {status === "found" ? "たまごをタップして、キャラクターと遊ぼう！" : "明るい場所で、カードから少し離してね"}
           </p>
         </>
       ) : (
@@ -94,6 +135,20 @@ export default function ARPage() {
             <li>下のボタンを押して、カメラを許可する。</li>
             <li>カード全体を映して、少し待つ。</li>
           </ol>
+          {players.length > 0 && (
+            <label className="mb-4 block text-sm font-bold">
+              ARで表示するプレイヤー
+              <select
+                value={playerIndex}
+                onChange={(event) => setPlayerIndex(Number(event.target.value))}
+                className="mt-2 min-h-12 w-full rounded-2xl border border-[#18366B]/20 bg-white px-4"
+              >
+                {players.map((item, index) => (
+                  <option key={item.name} value={index}>{item.name}さん</option>
+                ))}
+              </select>
+            </label>
+          )}
           {error && <p role="alert" className="mb-4 rounded-2xl bg-[#FFF0EE] p-4 text-sm leading-6 text-[#B42332]">{error}</p>}
           <button onClick={start} className="flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#FFBC39] px-4 py-3 font-extrabold focus-visible:outline-2 focus-visible:outline-offset-4"><Camera className="h-5 w-5" />{status === "error" ? "もう一度ためす" : "カメラをはじめる"}</button>
           <p className="mt-3 text-center text-xs leading-6 text-[#65748B]">体験版：平面のたまごイラストを表示します。<br />カメラ映像はこの端末内で処理します。</p>

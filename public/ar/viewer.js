@@ -5,15 +5,26 @@ let texture;
 let geometry;
 let material;
 let interaction;
+let characterAction;
+let characterTexture;
+let characterGeometry;
+let characterMaterial;
+let soundEffects;
 let stopped = false;
 
 const notify = (status) => {
   if (!stopped) window.parent.postMessage({ type: "ksu-ar", status }, window.location.origin);
 };
 
+const notifyMarkEarned = (markType) => {
+  if (!stopped) window.parent.postMessage({ type: "ksu-ar", action: "mark-earned", markType }, window.location.origin);
+};
+
 const stop = () => {
   stopped = true;
   interaction?.dispose();
+  characterAction?.dispose();
+  soundEffects?.close();
   ar?.renderer.setAnimationLoop(null);
   ar?.controller?.stopProcessVideo();
   ar?.controller?.worker?.terminate();
@@ -24,6 +35,9 @@ const stop = () => {
   texture?.dispose();
   geometry?.dispose();
   material?.dispose();
+  characterTexture?.dispose();
+  characterGeometry?.dispose();
+  characterMaterial?.dispose();
   ar?.renderer.dispose();
 };
 
@@ -41,10 +55,12 @@ document.addEventListener("visibilitychange", () => {
 
 async function start() {
   try {
-    const [THREE, { MindARThree }, { createEggInteraction }] = await Promise.all([
+    const [THREE, { MindARThree }, { createEggInteraction }, { createCharacterAction }, { createSoundEffects }] = await Promise.all([
       import("three"),
       import("/ar/vendor/mindar-image-three.prod.js"),
       import("/ar/egg-interaction.mjs"),
+      import("/ar/character-action.mjs"),
+      import("/ar/sound-effects.mjs"),
     ]);
     if (stopped) return;
 
@@ -52,9 +68,18 @@ async function start() {
     const response = await fetch("/ar/targets.mind");
     if (!response.ok) throw new Error("Target file not found");
     await response.arrayBuffer();
-    texture = await new THREE.TextureLoader().loadAsync("/egg_1_1.png");
+    const params = new URLSearchParams(window.location.search);
+    const characterType = [1, 2, 3].includes(Number(params.get("character"))) ? Number(params.get("character")) : 1;
+    const existingMark = params.get("mark") === "1";
+    const characterNames = ["", "koyamachan", "musubukun", "yamachan"];
+    const safeEgg = /^\/egg_[12]_[1-4]\.png$/.test(params.get("egg") || "") ? params.get("egg") : "/egg_1_1.png";
+    [texture, characterTexture] = await Promise.all([
+      new THREE.TextureLoader().loadAsync(safeEgg),
+      new THREE.TextureLoader().loadAsync(`/ar/characters/${characterNames[characterType]}.png`),
+    ]);
     if (stopped) { texture.dispose(); return; }
     texture.colorSpace = THREE.SRGBColorSpace;
+    characterTexture.colorSpace = THREE.SRGBColorSpace;
 
     ar = new MindARThree({
       container,
@@ -71,6 +96,22 @@ async function start() {
     const egg = new THREE.Mesh(geometry, material);
     egg.position.z = 0.02;
     anchor.group.add(egg);
+    // 元画像の縦横比を保ったまま、キャラクターをたまごの横へ配置
+    const characterAspect = characterTexture.image.width / characterTexture.image.height;
+    const characterHeight = characterType === 2 ? 0.72 : 0.62;
+    characterGeometry = new THREE.PlaneGeometry(characterHeight * characterAspect, characterHeight);
+    characterMaterial = new THREE.MeshBasicMaterial({ map: characterTexture, transparent: true, side: THREE.DoubleSide, depthWrite: false });
+    const character = new THREE.Mesh(characterGeometry, characterMaterial);
+    character.position.set(characterType === 2 ? 0.78 : -0.78, characterType === 3 ? 0.17 : -0.02, 0.05);
+    character.scale.setScalar(0.92);
+    anchor.group.add(character);
+    characterAction = createCharacterAction({
+      THREE, anchor, characterType, character, egg,
+      reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      existingMark,
+      onMarkEarned: notifyMarkEarned,
+    });
+    soundEffects = createSoundEffects(characterType);
     // 画像の透明度をタップ判定に使用する
     const maskCanvas = document.createElement("canvas");
     maskCanvas.width = texture.image.width;
@@ -83,10 +124,15 @@ async function start() {
       scene: ar.scene, anchor, egg,
       alphaMask: maskContext.getImageData(0, 0, maskCanvas.width, maskCanvas.height),
       reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      onTrigger: (time) => {
+        characterAction.start(time);
+        soundEffects.play();
+      },
     });
     anchor.onTargetFound = () => notify("found");
     anchor.onTargetLost = () => {
       interaction.reset();
+      characterAction.onTargetLost();
       notify("searching");
     };
 
@@ -95,6 +141,7 @@ async function start() {
     notify("searching");
     ar.renderer.setAnimationLoop(() => {
       interaction.update(performance.now());
+      characterAction.update(performance.now());
       ar.renderer.render(ar.scene, ar.camera);
     });
   } catch (error) {

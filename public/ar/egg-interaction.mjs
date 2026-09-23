@@ -1,8 +1,9 @@
 // たまごのタップ判定と星のアニメーションを管理する
-export function createEggInteraction({ THREE, container, renderer, camera, scene, anchor, egg, alphaMask, reducedMotion = false }) {
+export function createEggInteraction({ THREE, container, renderer, camera, scene, anchor, egg, alphaMask, reducedMotion = false, onTrigger = () => {} }) {
   const raycaster = new THREE.Raycaster();
   const pointer = new THREE.Vector2();
-  const duration = 700;
+  // キャラクターの演出が終わるまで再タップを受け付けない
+  const duration = 1800;
   let startedAt = null;
   let disposed = false;
 
@@ -58,6 +59,7 @@ export function createEggInteraction({ THREE, container, renderer, camera, scene
     const y = Math.min(alphaMask.height - 1, Math.max(0, Math.floor((1 - hit.uv.y) * alphaMask.height)));
     if (alphaMask.data[(y * alphaMask.width + x) * 4 + 3] < 64) return;
     startedAt = performance.now();
+    onTrigger(startedAt);
   };
 
   container.addEventListener("pointerdown", onPointerDown);
