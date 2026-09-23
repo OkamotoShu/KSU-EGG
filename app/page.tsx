@@ -167,26 +167,28 @@ export default function Home() {
         </p>
 
         {/* 木の看板とたまご型の切り替えボタン */}
-        <div className="grid w-full max-w-md shrink-0 grid-cols-[48px_minmax(0,1fr)_48px] items-center gap-3">
+        <div className={`grid w-full max-w-md shrink-0 items-center gap-3 ${nicknames.length > 1 ? "grid-cols-[48px_minmax(0,1fr)_48px]" : "grid-cols-1"}`}>
           {/* 前のプレイヤー */}
-          <button
-            type="button"
-            onClick={handlePrev}
-            disabled={currentIndex === 0}
-            aria-label="前のプレイヤーのたまご"
-            style={getEggButtonStyle(currentIndex === 0)}
-            className="relative flex h-14 w-12 -rotate-6 items-center justify-center rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 shadow-sm transition-[transform,background-color,border-color,color] duration-200 enabled:hover:rotate-0 enabled:active:translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:opacity-40 motion-reduce:transition-none"
-          >
-            <span
-              aria-hidden="true"
-              className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-white/80"
-            />
-            <ChevronLeft
-              aria-hidden="true"
-              className="h-7 w-7"
-              strokeWidth={3}
-            />
-          </button>
+          {nicknames.length > 1 && (
+            <button
+              type="button"
+              onClick={handlePrev}
+              disabled={currentIndex === 0}
+              aria-label="前のプレイヤーのたまご"
+              style={getEggButtonStyle(currentIndex === 0)}
+              className="relative flex h-14 w-12 -rotate-6 items-center justify-center rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 shadow-sm transition-[transform,background-color,border-color,color] duration-200 enabled:hover:rotate-0 enabled:active:translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:opacity-40 motion-reduce:transition-none"
+            >
+              <span
+                aria-hidden="true"
+                className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-white/80"
+              />
+              <ChevronLeft
+                aria-hidden="true"
+                className="h-7 w-7"
+                strokeWidth={3}
+              />
+            </button>
+          )}
 
           {/* 木目調のネームプレート */}
           <div
@@ -231,24 +233,26 @@ export default function Home() {
           </div>
 
           {/* 次のプレイヤー */}
-          <button
-            type="button"
-            onClick={handleNext}
-            disabled={currentIndex >= nicknames.length - 1}
-            aria-label="次のプレイヤーのたまご"
-            style={getEggButtonStyle(currentIndex >= nicknames.length - 1)}
-            className="relative flex h-14 w-12 rotate-6 items-center justify-center rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 shadow-sm transition-[transform,background-color,border-color,color] duration-200 enabled:hover:rotate-0 enabled:active:translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:opacity-40 motion-reduce:transition-none"
-          >
-            <span
-              aria-hidden="true"
-              className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-white/80"
-            />
-            <ChevronRight
-              aria-hidden="true"
-              className="h-7 w-7"
-              strokeWidth={3}
-            />
-          </button>
+          {nicknames.length > 1 && (
+            <button
+              type="button"
+              onClick={handleNext}
+              disabled={currentIndex >= nicknames.length - 1}
+              aria-label="次のプレイヤーのたまご"
+              style={getEggButtonStyle(currentIndex >= nicknames.length - 1)}
+              className="relative flex h-14 w-12 rotate-6 items-center justify-center rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 shadow-sm transition-[transform,background-color,border-color,color] duration-200 enabled:hover:rotate-0 enabled:active:translate-y-0.5 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B] disabled:opacity-40 motion-reduce:transition-none"
+            >
+              <span
+                aria-hidden="true"
+                className="absolute top-2 left-2 h-1.5 w-1.5 rounded-full bg-white/80"
+              />
+              <ChevronRight
+                aria-hidden="true"
+                className="h-7 w-7"
+                strokeWidth={3}
+              />
+            </button>
+          )}
         </div>
 
         {/* 残りの幅と高さの両方に合わせてたまごを拡大 */}
