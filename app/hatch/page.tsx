@@ -1,3 +1,4 @@
+// app/hatch/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -25,7 +26,7 @@ export default function HatchPage() {
   );
 
   useEffect(() => {
-    // ▼ 1. 現在のURL（replayパラメータがある場合は含める）からリダイレクトパスを生成
+    // ▼ 以前修正した「登録画面へ誘導し、完了後に孵化画面へ戻す」リダイレクトパス
     const currentUrl = `/hatch${isReplay ? "?replay=1" : ""}`;
     const redirectPath = `/register?redirect=${encodeURIComponent(currentUrl)}`;
 
@@ -33,7 +34,6 @@ export default function HatchPage() {
       try {
         const snapshot = await getDoc(doc(db, "users", user.uid));
         
-        // ▼ 2. ドキュメントが存在しない、または nickName が未設定なら登録画面へ
         if (!snapshot.exists() || !snapshot.data()?.nickName) {
           router.push(redirectPath);
           return;
@@ -56,7 +56,6 @@ export default function HatchPage() {
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
-        // ▼ 3. 未ログインの場合も生成したリダイレクトパスへ飛ばす
         router.push(redirectPath);
       } else {
         setCurrentUser(user);
@@ -65,7 +64,7 @@ export default function HatchPage() {
     });
     
     return () => unsubscribe();
-  }, [router, isReplay]); // ← 依存配列に isReplay を追加
+  }, [router, isReplay]);
 
   const finishHatching = async () => {
     if (!currentUser || isUpdating) return;
@@ -141,10 +140,11 @@ export default function HatchPage() {
   return (
     <>
       <Header />
-      <main className="flex min-h-dvh items-center justify-center bg-[#FFFCF3] px-5 pt-24 pb-10 text-[#18366B]">
+      <main className="flex min-h-dvh items-center justify-center bg-[#FFFCF3] px-5 pt-24 pb-[calc(2rem+env(safe-area-inset-bottom))] text-[#18366B]">
         <div className="w-full max-w-md text-center">
           <h1 className="text-3xl font-extrabold text-[#50331D]">やったね！</h1>
           <p className="mt-2 font-bold text-[#65748B]">みんなのモンスターが生まれたよ！</p>
+          
           <div className={`mt-6 grid gap-3 ${nicknames.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
             {nicknames.map((name) => {
               const answers = eggDataMap[name] || [];
@@ -159,7 +159,36 @@ export default function HatchPage() {
               );
             })}
           </div>
-          <button onClick={() => router.push("/")} className="mt-6 min-h-14 w-full rounded-2xl bg-[#FFBC39] px-4 font-extrabold">ホームへ戻る</button>
+
+          {/* ▼▼▼ 追加：アンケートのお願いセクション ▼▼▼ */}
+          {!isReplay && (
+            <div className="mt-8 rounded-3xl border border-[#18366B]/10 bg-white p-6 shadow-sm">
+              <h2 className="text-base font-extrabold text-[#A96500]">📝 アンケートのお願い</h2>
+              <p className="mt-2 text-sm leading-relaxed text-[#65748B] text-left">
+                遊んでくれてありがとう！<br />
+                今後のイベントをより楽しくするために、アンケートへのご協力をお願いします。
+              </p>
+              
+              {/* target="_blank" で別タブでアンケート（Googleフォーム等）を開く */}
+              <a
+                href="https://forms.google.com/..." /* ←★ここに実際のアンケートURLを入れます */
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#269D9C] px-4 font-bold text-white shadow-sm transition active:scale-95"
+              >
+                アンケートに答える
+              </a>
+            </div>
+          )}
+          {/* ▲▲▲ ここまで ▲▲▲ */}
+
+          {/* アンケートボタンを目立たせるため、ホームへ戻るボタンは少し控えめな色に変更 */}
+          <button 
+            onClick={() => router.push("/")} 
+            className="mt-4 min-h-14 w-full rounded-2xl bg-[#E5E7EB] px-4 font-bold text-[#65748B] transition active:scale-95"
+          >
+            ホームへ戻る
+          </button>
         </div>
       </main>
     </>

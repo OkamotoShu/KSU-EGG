@@ -18,7 +18,6 @@ export default function Home() {
   const [nicknames, setNicknames] = useState<string[]>([]);
   const [eggDataMap, setEggDataMap] = useState<Record<string, number[]>>({});
   const [scannedQRs, setScannedQRs] = useState<number[]>([0, 0, 0, 0, 0, 0]);
-  const [arMarks, setARMarks] = useState<Record<string, 1 | 2 | 3>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState<string | null>(null);
@@ -43,7 +42,6 @@ export default function Home() {
           setNicknames(data.orderedNames || Object.keys(data.nickName));
           setEggDataMap(data.nickName);
           setScannedQRs(data.scannedQRs || [0, 0, 0, 0, 0, 0]);
-          setARMarks(data.arMarks || {});
           
           if (!localStorage.getItem("tutorialSeen")) {
             setShowTutorial(true);
@@ -53,18 +51,15 @@ export default function Home() {
         }
       }
 
-      // ドキュメントが存在しない、または nickName が未設定の場合のみ登録画面へ
       router.push("/register");
     } catch (error) {
       console.error("ユーザーデータ取得エラー:", error);
-      // 通信エラー時は登録画面に飛ばさず、エラーメッセージをセットする
       setFetchError("データの読み込みに失敗しました。電波の良いところで再試行してください。");
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    // Firebase Authのログイン状態が復元されるのを待ってからデータを取りに行く
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         loadUserData(user.uid);
@@ -122,13 +117,16 @@ export default function Home() {
 
   const currentEggData = eggDataMap[currentName] || [0, 0, 0, 0, 0, 0];
 
-  // ▼ 変更: 配列から情報を取得し、たまごと巣の画像パスを生成
-  const traitEggType = currentEggData[0]; // 1箇所目: たまごのタイプ
-  const traitNest = currentEggData[1];    // 2箇所目: 巣
-  const traitColor = currentEggData[2];   // 3箇所目: 色
-  const traitPattern = currentEggData[3]; // 3箇所目: たまごの模様
+  const traitEggType = currentEggData[0];
+  const traitNest = currentEggData[1];
+  const traitColor = currentEggData[2];
+  const traitPattern = currentEggData[3];
 
   const isHatched = scannedQRs[5] === 1;
+
+  // ▼▼▼ 修正：正しくイベントクリア数（0〜4の合計）を計算する ▼▼▼
+  const totalEventScans = scannedQRs.slice(0, 5).reduce((sum, val) => sum + val, 0);
+
   const monsterSrc = `/monster_${traitEggType}_${traitNest || 1}_${traitColor || 1}_0.png`;
   const eggSrc = isHatched
     ? monsterSrc
@@ -140,44 +138,19 @@ export default function Home() {
     ? "/pattern_0.png"
     : `/pattern_${traitPattern}.png`;
   const auraSrc = isHatched
-    ? `/aura_${traitPattern}.png` // ※ 必要に応じてファイル名規則に合せて調整してください
+    ? `/aura_${traitPattern}.png` 
     : "/aura_0.png";
 
-  // たまごの色に合わせた切り替えボタンの配色
   const eggButtonColors: Record<
     number,
     { background: string; border: string; foreground: string }
   > = {
-    // ピンク
-    1: {
-      background: "#F8D5DF",
-      border: "#DCA5B6",
-      foreground: "#863D55",
-    },
-
-    // 水色
-    2: {
-      background: "#D4EDF3",
-      border: "#9FC8D5",
-      foreground: "#315E70",
-    },
-
-    // 淡い黄色
-    3: {
-      background: "#F9EFAE",
-      border: "#D9CA7D",
-      foreground: "#756020",
-    },
-
-    // 淡い緑
-    4: {
-      background: "#D9EBCF",
-      border: "#ADC79D",
-      foreground: "#456338",
-    },
+    1: { background: "#F8D5DF", border: "#DCA5B6", foreground: "#863D55" },
+    2: { background: "#D4EDF3", border: "#9FC8D5", foreground: "#315E70" },
+    3: { background: "#F9EFAE", border: "#D9CA7D", foreground: "#756020" },
+    4: { background: "#D9EBCF", border: "#ADC79D", foreground: "#456338" },
   };
 
-  // 未選択・操作できない場合は無彩色
   const neutralButtonColors = {
     background: "#FFFFFF",
     border: "#D1D5DB",
@@ -203,9 +176,7 @@ export default function Home() {
     <>
       <Header />
 
-      {/* 画面全体の設定。justify-center を外し、中身のflex-1で調整します */}
       <main className="flex h-dvh flex-col items-center gap-3 bg-[#FFFCF3] px-5 pt-24 pb-28 text-[#18366B]">
-        {/* 小さなサブタイトル */}
         <p className="flex shrink-0 items-center justify-center gap-2 text-[10px] font-extrabold tracking-[0.16em] text-[#A96500] sm:text-xs">
           <span
             aria-hidden="true"
@@ -218,9 +189,7 @@ export default function Home() {
           />
         </p>
 
-        {/* 木の看板とたまご型の切り替えボタン */}
         <div className={`grid w-full max-w-md shrink-0 items-center gap-3 ${nicknames.length > 1 ? "grid-cols-[48px_minmax(0,1fr)_48px]" : "grid-cols-1"}`}>
-          {/* 前のプレイヤー */}
           {nicknames.length > 1 && (
             <button
               type="button"
@@ -242,7 +211,6 @@ export default function Home() {
             </button>
           )}
 
-          {/* 木目調のネームプレート */}
           <div
             className="relative min-w-0 rounded-lg border border-[#A66D36] px-4 py-3 shadow-[0_3px_0_#946032]"
             style={{
@@ -265,7 +233,6 @@ export default function Home() {
         `,
             }}
           >
-            {/* 看板の留め具 */}
             <span
               aria-hidden="true"
               className="absolute top-1/2 left-1.5 h-1.5 w-1.5 -translate-y-1/2 rounded-full bg-[#946032]"
@@ -284,7 +251,6 @@ export default function Home() {
             </h1>
           </div>
 
-          {/* 次のプレイヤー */}
           {nicknames.length > 1 && (
             <button
               type="button"
@@ -307,7 +273,6 @@ export default function Home() {
           )}
         </div>
 
-        {/* 残りの幅と高さの両方に合わせてたまごを拡大 */}
         <div
           className="relative min-h-0 w-full max-w-lg flex-1"
           style={{ containerType: "size" }}
@@ -319,27 +284,24 @@ export default function Home() {
                 width: "min(100cqw, 100cqh, 480px)",
               }}
             >
-              {/* 淡い黄色の背景 */}
               <div
                 aria-hidden="true"
                 className="absolute inset-x-0 top-[8%] bottom-[3%] rounded-[46%_54%_49%_51%/53%_45%_55%_47%] bg-[#FFF0C2]"
               />
 
-              {/* 現在のたまご・巣・模様 */}
               <div className="absolute inset-0">
                 <EggDisplay
                   eggSrc={eggSrc}
                   nestSrc={nestSrc}
                   patternSrc={patternSrc}
                   auraSrc={auraSrc}
-                  crackSrc={!isHatched && scannedQRs[4] === 1 ? "/crack.png" : undefined}
+                  crackSrc={!isHatched && totalEventScans >= 5 ? "/crack.png" : undefined}
                 />
               </div>
             </div>
           </div>
         </div>
 
-        {/* たまご型のプレイヤー表示 */}
         {nicknames.length > 1 && (
           <div
             role="group"
@@ -366,6 +328,22 @@ export default function Home() {
             ))}
           </div>
         )}
+
+        {/* ▼▼▼ 追加：孵化済みの時だけアンケートボタンを表示 ▼▼▼ */}
+        {isHatched && (
+          <div className="mt-2 flex w-full shrink-0 justify-center">
+            <a
+              href="https://forms.google.com/..." /* ←★ここにアンケートのURLを入れます */
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex min-h-12 w-full max-w-sm items-center justify-center rounded-full bg-[#269D9C] px-6 text-sm font-bold text-white shadow-sm transition hover:bg-[#1E7D7C] active:scale-95"
+            >
+              アンケートがまだの方はこちら
+            </a>
+          </div>
+        )}
+        {/* ▲▲▲ ここまで ▲▲▲ */}
+
       </main>
 
       <Footer />
