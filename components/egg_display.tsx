@@ -6,11 +6,13 @@ interface EggDisplayProps {
   eggSrc: string;
   nestSrc: string;
   patternSrc: string;
+  auraSrc?: string;
 }
 
-export function EggDisplay({ eggSrc, nestSrc, patternSrc }: EggDisplayProps) {
+export function EggDisplay({ eggSrc, nestSrc, patternSrc, auraSrc }: EggDisplayProps) {
   const showNest = !nestSrc.includes("nest_0");
   const showPattern = !patternSrc.includes("pattern_0");
+  const showAura = auraSrc && !auraSrc.includes("aura_0");
 
   // たまごと模様だけを揺らす
   const handleEggClick = (element: HTMLButtonElement) => {
@@ -47,6 +49,14 @@ export function EggDisplay({ eggSrc, nestSrc, patternSrc }: EggDisplayProps) {
           className="absolute bottom-[2%] z-0 h-[80%] w-[80%] object-contain"
         />
       )}
+
+      {showAura && (
+          <img
+            src={auraSrc}
+            alt="オーラ"
+            className="absolute inset-0 m-auto z-0 h-[100%] w-[100%] object-contain pointer-events-none"
+          />
+        )}
 
       {/* たまご・模様を配置するコンテナ */}
       {/* 巣を動かさず、たまごと模様だけを揺らす */}
