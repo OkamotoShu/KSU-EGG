@@ -1,16 +1,20 @@
 // キャラクターごとに異なる、たまごとの触れ合いを再生する
-export function createCharacterAction({ THREE, anchor, characterType, character, egg, reducedMotion = false, existingMark = false, onMarkEarned = () => {} }) {
+export function createCharacterAction({ THREE, anchor, characterType, character, egg, reducedMotion = false, existingMarks = [], existingMark = false, showPersistentMarks = true, settleAsHat = true, onMarkEarned = () => {} }) {
   const duration = 1800;
-  const base = { characterX: character.position.x, characterY: character.position.y, characterZ: character.position.z, characterScale: character.scale.x, eggX: egg.position.x, eggY: egg.position.y, eggZ: egg.position.z };
+  const base = { characterX: character.position.x, characterY: character.position.y, characterZ: character.position.z, characterScale: character.scale.x, eggX: egg.position.x, eggY: egg.position.y, eggZ: egg.position.z, eggScale: egg.scale.x };
   let startedAt = null;
-  let markEarned = existingMark;
+  const savedMarks = new Set(existingMark ? [...existingMarks, characterType] : existingMarks);
+  let markEarned = savedMarks.has(characterType);
   let wearingHat = false;
 
   // むすぶくん用のハート
   const heartShape = new THREE.Shape();
-  heartShape.moveTo(0, -0.05);
-  heartShape.bezierCurveTo(-0.12, -0.16, -0.28, -0.02, 0, 0.2);
-  heartShape.bezierCurveTo(0.28, -0.02, 0.12, -0.16, 0, -0.05);
+  heartShape.moveTo(0, -0.2);
+  heartShape.bezierCurveTo(-0.04, -0.12, -0.26, 0, -0.26, 0.13);
+  heartShape.bezierCurveTo(-0.26, 0.3, -0.06, 0.33, 0, 0.17);
+  heartShape.bezierCurveTo(0.06, 0.33, 0.26, 0.3, 0.26, 0.13);
+  heartShape.bezierCurveTo(0.26, 0, 0.04, -0.12, 0, -0.2);
+  heartShape.closePath();
   const heartGeometry = new THREE.ShapeGeometry(heartShape);
   const hearts = Array.from({ length: 5 }, (_, index) => {
     const material = new THREE.MeshBasicMaterial({ color: index % 2 ? 0xff8faa : 0xffb5c5, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
@@ -49,35 +53,55 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
     else starShape.lineTo(x, y);
   }
   starShape.closePath();
-  const mark = new THREE.Group();
   const markGeometries = [];
   const markMaterials = [];
-  const addMarkMesh = (geometry, color) => {
+  const addMarkMesh = (markGroup, geometry, color) => {
     const material = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.92, depthWrite: false, side: THREE.DoubleSide });
     const mesh = new THREE.Mesh(geometry, material);
     markGeometries.push(geometry);
     markMaterials.push(material);
-    mark.add(mesh);
+    markGroup.add(mesh);
     return mesh;
   };
-  if (characterType === 1) {
-    addMarkMesh(new THREE.ShapeGeometry(starShape), 0xffdf55);
-    mark.position.set(0.17, 0.13, 0.12);
-  } else if (characterType === 2) {
-    const heartMark = addMarkMesh(new THREE.ShapeGeometry(heartShape), 0xff7fa4);
+  const addMarkLine = (markGroup, points, color) => {
+    const geometry = new THREE.BufferGeometry().setFromPoints(points.map(([x, y]) => new THREE.Vector3(x, y, 0)));
+    const material = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.95, depthWrite: false });
+    const line = new THREE.LineLoop(geometry, material);
+    markGeometries.push(geometry);
+    markMaterials.push(material);
+    markGroup.add(line);
+    return line;
+  };
+  const marks = [1, 2, 3].map((markType) => {
+    const markGroup = new THREE.Group();
+    if (markType === 1) {
+      addMarkMesh(markGroup, new THREE.ShapeGeometry(starShape), 0xffdf55);
+      markGroup.position.set(0.17, 0.13, 0.12);
+    } else if (markType === 2) {
+      const heartMark = addMarkMesh(markGroup, new THREE.ShapeGeometry(heartShape), 0xff7fa4);
     heartMark.scale.setScalar(0.58);
-    mark.position.set(-0.18, -0.01, 0.12);
-  } else {
-    addMarkMesh(new THREE.RingGeometry(0.105, 0.125, 32), 0x46d99a);
-    const magicStar = addMarkMesh(new THREE.ShapeGeometry(starShape), 0xffdf55);
-    magicStar.scale.setScalar(0.72);
-    mark.position.set(0.1, -0.15, 0.12);
-  }
-  mark.visible = existingMark;
-  egg.add(mark);
+      markGroup.position.set(-0.18, -0.01, 0.12);
+    } else {
+      // 円ではなく、二つの三角と菱形の刻印で魔法紋を表現する
+      addMarkLine(markGroup, [[0, 0.14], [-0.13, -0.09], [0.13, -0.09]], 0x46d99a);
+      addMarkLine(markGroup, [[0, -0.14], [-0.13, 0.09], [0.13, 0.09]], 0x46d99a);
+      const diamondShape = new THREE.Shape();
+      diamondShape.moveTo(0, 0.055);
+      diamondShape.lineTo(0.045, 0);
+      diamondShape.lineTo(0, -0.055);
+      diamondShape.lineTo(-0.045, 0);
+      diamondShape.closePath();
+      addMarkMesh(markGroup, new THREE.ShapeGeometry(diamondShape), 0xffdf55);
+      markGroup.position.set(0.1, -0.15, 0.12);
+    }
+    markGroup.visible = showPersistentMarks && savedMarks.has(markType);
+    egg.add(markGroup);
+    return markGroup;
+  });
+  const mark = marks[characterType - 1];
 
   const awardMark = () => {
-    mark.visible = true;
+    mark.visible = showPersistentMarks;
     if (markEarned) return;
     markEarned = true;
     onMarkEarned(characterType);
@@ -96,7 +120,7 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
     character.renderOrder = 0;
     egg.position.set(base.eggX, base.eggY, base.eggZ);
     egg.rotation.z = 0;
-    egg.scale.setScalar(1);
+    egg.scale.setScalar(base.eggScale);
     mark.rotation.z = 0;
     if (!markEarned) mark.visible = false;
     hideEffects();
@@ -104,31 +128,38 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
   const settleHat = () => {
     startedAt = null;
     wearingHat = true;
-    character.position.set(0, 0.53, 0.11);
+    character.position.set(0, base.eggY + 0.53, 0.11);
     character.rotation.z = 0;
     character.scale.setScalar(base.characterScale * 0.8);
     character.renderOrder = 3;
     egg.position.set(base.eggX, base.eggY, base.eggZ);
     egg.rotation.z = 0;
-    egg.scale.setScalar(1);
+    egg.scale.setScalar(base.eggScale);
     hideEffects();
     awardMark();
   };
   const reset = () => {
     wearingHat = false;
     markEarned = false;
-    mark.visible = false;
+    marks.forEach((savedMark) => { savedMark.visible = false; });
     restoreBase();
   };
   const smooth = (value) => value * value * (3 - 2 * value);
 
   return {
+    // eventで画像が変化した後は、その位置と大きさを次の基準にする
+    setEggBaseState() {
+      base.eggX = egg.position.x;
+      base.eggY = egg.position.y;
+      base.eggZ = egg.position.z;
+      base.eggScale = egg.scale.x;
+    },
     start(time) { if (startedAt === null) startedAt = time; },
     update(now) {
       if (startedAt === null) return;
       const progress = Math.min(1, (now - startedAt) / duration);
       if (progress >= 1) {
-        if (characterType === 3) settleHat();
+        if (characterType === 3 && settleAsHat) settleHat();
         else {
           awardMark();
           restoreBase();
@@ -166,7 +197,7 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
         character.position.y = base.characterY + embrace * 0.05;
         character.scale.setScalar(base.characterScale * (1 + embrace * 0.38));
         character.renderOrder = 2;
-        egg.scale.setScalar(1 - embrace * 0.14 + Math.sin(progress * Math.PI * 6) * 0.015 * (1 - leave));
+        egg.scale.setScalar(base.eggScale * (1 - embrace * 0.14 + Math.sin(progress * Math.PI * 6) * 0.015 * (1 - leave)));
         hearts.forEach((heart, index) => {
           const local = Math.max(0, progress - index * 0.045);
           heart.visible = local > 0.16 && progress < 0.92;
@@ -180,18 +211,18 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
         const cast = smooth(Math.min(1, progress / 0.32));
         const land = smooth(Math.min(1, Math.max(0, (progress - 0.28) / 0.36)));
         if (wearingHat) {
-          character.position.set(0, 0.53 + Math.sin(progress * Math.PI * 4) * 0.025, 0.11);
+          character.position.set(0, base.eggY + 0.53 + Math.sin(progress * Math.PI * 4) * 0.025, 0.11);
           character.scale.setScalar(base.characterScale * 0.8);
         } else {
           character.position.x = THREE.MathUtils.lerp(base.characterX, 0, land);
-          character.position.y = THREE.MathUtils.lerp(base.characterY + Math.sin(cast * Math.PI) * 0.48, 0.53, land);
+          character.position.y = THREE.MathUtils.lerp(base.characterY + Math.sin(cast * Math.PI) * 0.48, base.eggY + 0.53, land);
           character.scale.setScalar(THREE.MathUtils.lerp(base.characterScale, base.characterScale * 0.8, land));
         }
         character.position.z = 0.11;
         character.rotation.z = Math.sin(progress * Math.PI * 8) * 0.045 * (1 - land);
         character.renderOrder = 3;
         egg.position.y = base.eggY + pulse * 0.1;
-        egg.scale.setScalar(1 + pulse * 0.08);
+        egg.scale.setScalar(base.eggScale * (1 + pulse * 0.08));
         magicRing.visible = progress > 0.08 && progress < 0.88;
         magicRing.position.set(0, 0, 0.08);
         magicRing.rotation.z = progress * Math.PI * 4;
@@ -205,9 +236,17 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
           orb.scale.setScalar(0.7 + Math.sin(progress * Math.PI * 4 + index) * 0.3);
           orb.material.opacity = Math.sin(progress * Math.PI);
         });
-        if (!wearingHat && progress > 0.62) {
+        if (showPersistentMarks && !wearingHat && progress > 0.62) {
           mark.visible = true;
           mark.rotation.z = progress * Math.PI;
+        }
+        if (!settleAsHat) {
+          // eventでは魔法後に側面へ滑らかに戻り、次の操作を待つ
+          const returnEase = smooth(Math.max(0, (progress - 0.72) / 0.28));
+          character.position.x = THREE.MathUtils.lerp(character.position.x, base.characterX, returnEase);
+          character.position.y = THREE.MathUtils.lerp(character.position.y, base.characterY, returnEase);
+          character.position.z = THREE.MathUtils.lerp(character.position.z, base.characterZ, returnEase);
+          character.scale.setScalar(THREE.MathUtils.lerp(character.scale.x, base.characterScale, returnEase));
         }
       }
     },
@@ -222,7 +261,7 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
       hearts.forEach((heart) => { anchor.group.remove(heart); heart.material.dispose(); });
       orbs.forEach((orb) => { anchor.group.remove(orb); orb.material.dispose(); });
       anchor.group.remove(magicRing);
-      egg.remove(mark);
+      marks.forEach((savedMark) => egg.remove(savedMark));
       heartGeometry.dispose();
       ringGeometry.dispose();
       ringMaterial.dispose();

@@ -15,9 +15,20 @@ import {
   SuccessPhase,   // 新規追加
   EggDisplay      // 新規追加
 } from "@/components/event-phases";
+import { EventARPhase } from "@/components/event-ar-phase";
 
 // ▼ 'success' フェーズを追加
-type Phase = "title" | "question" | "confirm" | "success";
+type Phase = "title" | "question" | "confirm" | "arChoice" | "ar" | "success";
+
+type CharacterType = 1 | 2 | 3;
+
+// event文書のcharacterを読み取り、未設定ならイベント順で固定する
+function getEventCharacter(value: unknown, eventIndex: number): CharacterType {
+  if (value === 1 || value === "1" || value === "koyamachan") return 1;
+  if (value === 2 || value === "2" || value === "musubukun") return 2;
+  if (value === 3 || value === "3" || value === "yamachan") return 3;
+  return ((eventIndex % 3) + 1) as CharacterType;
+}
 
 function EventContent() {
   const searchParams = useSearchParams();
@@ -34,12 +45,15 @@ function EventContent() {
   const [choices, setChoices] = useState<string[]>([]);
   // ▼ 成功時のメッセージステートを追加
   const [successMessage, setSuccessMessage] = useState("");
+  const [eventCharacter, setEventCharacter] = useState<CharacterType>(1);
 
   const [nicknames, setNicknames] = useState<string[]>([]);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
   const [totalScans, setTotalScans] = useState(0);
   const [tempAnswers, setTempAnswers] = useState<Record<string, number>>({});
   const [eggDataMap, setEggDataMap] = useState<Record<string, number[]>>({});
+  const [previousEggDataMap, setPreviousEggDataMap] = useState<Record<string, number[]>>({});
+  const [arMarks, setARMarks] = useState<Record<string, Array<CharacterType>>>({});
 
   // 確認画面から個別に回答を変更しているか
   const [isEditing, setIsEditing] = useState(false);
@@ -75,6 +89,15 @@ function EventContent() {
         const names = data.orderedNames || Object.keys(data.nickName || {});
         setNicknames(names);
         setEggDataMap(data.nickName || {});
+        setPreviousEggDataMap(Object.fromEntries(
+          Object.entries(data.nickName || {}).map(([name, answers]) => [name, [...(answers as number[])]])
+        ));
+        setARMarks(Object.fromEntries(
+          Object.entries(data.arMarks || {}).map(([name, value]) => [
+            name,
+            (Array.isArray(value) ? value : [value]).filter((mark): mark is CharacterType => [1, 2, 3].includes(Number(mark))),
+          ])
+        ));
 
         const scannedQRs: number[] = data.scannedQRs || [0, 0, 0, 0, 0, 0];
         const total = scannedQRs.reduce((sum, current) => sum + current, 0);
@@ -90,6 +113,9 @@ function EventContent() {
           setChoices(eventData.select || []);
           // ▼ DBの success フィールドを取得（なければデフォルト文言）
           setSuccessMessage(eventData.success || "たまごの様子が変わった！");
+          setEventCharacter(getEventCharacter(eventData.character, total));
+          // 第5イベントはひび画像のタイトルを挟まず、ARの選択へ直接進む
+          if (total === 4) setPhase("arChoice");
         } else {
           setEventTitle("エラー");
           setQuestion("イベントデータが見つかりませんでした。");
@@ -167,39 +193,69 @@ function EventContent() {
     window.scrollTo({ top: 0, behavior: "instant" });
   };
 
-  const handleConfirmSave = async () => {
+  const prepareARChoice = () => {
+    // 第5イベントは回答を増やさず、現在のたまごを三人で目覚めさせる
+    if (totalScans === 4) {
+      setPhase("arChoice");
+      return;
+    }
+    setPhase("question");
+  };
+
+  const handleConfirmSave = () => {
+    if (isUpdating || !currentUser || !qrIdParam) return;
+    // ARではFirestore更新前の最新回答を使う。完了時にまとめて保存する
+    const previewData = Object.fromEntries(
+      Object.entries(eggDataMap).map(([name, answers]) => [name, [...answers]])
+    );
+    nicknames.forEach((name) => {
+      previewData[name] ??= [];
+      previewData[name][totalScans] = tempAnswers[name];
+    });
+    setEggDataMap(previewData);
+    setPhase("arChoice");
+  };
+
+  // AR完了またはスキップ後に、回答とQRの状態をまとめて保存する
+  const handleEventComplete = async (awardMark: boolean) => {
     if (isUpdating || !currentUser || !qrIdParam) return;
     setIsUpdating(true);
-    const qrIndex = parseInt(qrIdParam, 10);
-
     try {
       const userRef = doc(db, "users", currentUser.uid);
       const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const data = userSnap.data();
-        const newScannedQRs = [...(data.scannedQRs || [0, 0, 0, 0, 0, 0])];
-        newScannedQRs[qrIndex] = 1;
-
-        const updatedNickName = { ...data.nickName };
-        nicknames.forEach((name) => {
-          updatedNickName[name][totalScans] = tempAnswers[name];
-        });
-
-        await updateDoc(userRef, {
-          scannedQRs: newScannedQRs,
-          nickName: updatedNickName
-        });
-
-        // ▼ 保存完了後、すぐホームに戻るのではなく成功画面を表示する
-        setEggDataMap(updatedNickName); // 新しい情報を画面に反映
-        setTotalScans(prev => prev + 1); // 次のステージに進んだことを反映
-        setIsUpdating(false);
-        setPhase("success");
-      }
+      if (!userSnap.exists()) throw new Error("ユーザーデータが見つかりません");
+      const data = userSnap.data();
+      const savedMarks = data.arMarks || {};
+      const updatedMarks = { ...savedMarks };
+      const updatedNickName = Object.fromEntries(
+        Object.entries(data.nickName || {}).map(([name, value]) => [name, [...(value as number[])]])
+      );
+      const newScannedQRs = [...(data.scannedQRs || [0, 0, 0, 0, 0, 0])];
+      newScannedQRs[parseInt(qrIdParam, 10)] = 1;
+      nicknames.forEach((name) => {
+        const value = savedMarks[name];
+        const currentMarks = (Array.isArray(value) ? value : [value])
+          .filter((mark): mark is CharacterType => [1, 2, 3].includes(Number(mark)));
+        if (awardMark) {
+          const earnedCharacters: CharacterType[] = totalScans === 4 ? [1, 2, 3] : [eventCharacter];
+          updatedMarks[name] = Array.from(new Set([...currentMarks, ...earnedCharacters])).sort();
+        }
+        updatedNickName[name] ??= [];
+        if (totalScans !== 4) updatedNickName[name][totalScans] = tempAnswers[name];
+      });
+      await updateDoc(userRef, {
+        ...(awardMark ? { arMarks: updatedMarks } : {}),
+        nickName: updatedNickName,
+        scannedQRs: newScannedQRs,
+      });
+      setARMarks(updatedMarks);
+      setEggDataMap(updatedNickName);
+      setTotalScans((previous) => previous + 1);
+      setPhase("success");
     } catch (error) {
-      console.error("更新エラー:", error);
-      alert("通信エラーが発生しました。");
+      console.error("ARの印の保存に失敗しました:", error);
+      alert("通信エラーが発生しました。もう一度お試しください。");
+    } finally {
       setIsUpdating(false);
     }
   };
@@ -229,7 +285,7 @@ function EventContent() {
       {phase === "title" && (
         <TitlePhase
           eventTitle={eventTitle}
-          onNext={() => setPhase("question")}
+          onNext={prepareARChoice}
         >
           <div className="mb-5 h-[min(28dvh,220px)]">
             <EventImage {...imageProps} />
@@ -263,6 +319,65 @@ function EventContent() {
           isUpdating={isUpdating}
           onConfirmSave={handleConfirmSave}
           onEditPlayer={handleEditPlayer}
+        />
+      )}
+
+      {phase === "arChoice" && (
+        <div className="mx-auto flex w-full max-w-sm flex-col rounded-3xl border border-[#18366B]/10 bg-white p-6 text-center shadow-sm">
+          <p className="text-xs font-extrabold tracking-[0.16em] text-[#A96500]">EVENT AR</p>
+          <h2 className="mt-2 text-2xl font-extrabold">ARで遊んでみる？</h2>
+          <p className="mt-3 text-sm leading-7 text-[#65748B]">
+            {totalScans === 4
+              ? "三人のキャラクターと一緒に、たまごを目覚めさせよう。"
+              : "カードを一度読み取ると、みんなのたまごが一緒に現れるよ。"}
+          </p>
+          <button
+            type="button"
+            onClick={() => setPhase("ar")}
+            className="mt-6 min-h-14 rounded-2xl bg-[#FFBC39] px-4 font-extrabold text-[#18366B]"
+          >
+            ARで遊ぶ
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleEventComplete(false)}
+            disabled={isUpdating}
+            className="mt-3 min-h-12 rounded-2xl border-2 border-[#18366B]/15 bg-[#FFFCF3] px-4 text-sm font-bold text-[#18366B] disabled:opacity-40"
+          >
+            {isUpdating ? "きろくしています..." : "ARをスキップ"}
+          </button>
+        </div>
+      )}
+
+      {phase === "ar" && (
+        <EventARPhase
+          players={nicknames.map((name) => {
+            const answers = eggDataMap[name] || [];
+            const previousAnswers = previousEggDataMap[name] || [];
+            // p03では選んだ色のたまごを使って交流を始める
+            const arBeforeColor = totalScans === 2
+              ? answers[2]
+              : previousAnswers[2];
+            return {
+              name,
+              before: {
+                egg: `/egg_${previousAnswers[0] || 0}_${arBeforeColor || 0}.png`,
+                nest: previousAnswers[1] ? `/nest_${previousAnswers[1]}.png` : null,
+                pattern: previousAnswers[3] ? `/pattern_${previousAnswers[3]}.png` : null,
+              },
+              after: {
+                egg: `/egg_${answers[0] || 0}_${answers[2] || 0}.png`,
+                nest: answers[1] ? `/nest_${answers[1]}.png` : null,
+                pattern: answers[3] ? `/pattern_${answers[3]}.png` : null,
+              },
+              marks: arMarks[name] || [],
+            };
+          })}
+          character={eventCharacter}
+          mode={totalScans === 4 ? "awakening" : "normal"}
+          isSaving={isUpdating}
+          onComplete={() => void handleEventComplete(true)}
+          onSkip={() => void handleEventComplete(false)}
         />
       )}
 
@@ -304,8 +419,10 @@ function EventContent() {
                 >
                   <EggDisplay
                     eggImagePath={`/egg_${eType}_${eColor}.png`}
+                    nestImagePath={ans[1] ? `/nest_${ans[1]}.png` : undefined}
                     patternImagePath={`/pattern_${ePattern}.png`}
                     showPattern={totalScans >= 4}
+                    crackImagePath={totalScans >= 5 ? "/crack.png" : undefined}
                     sizeClass={sizeClass}
                   />
 

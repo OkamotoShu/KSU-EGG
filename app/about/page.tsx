@@ -97,18 +97,6 @@ export default function AboutPage() {
                             />
                         </button>
 
-                        {/* カードを使ったAR体験 */}
-                        <Link
-                            href="/ar"
-                            className="flex min-h-20 items-center justify-between gap-3 rounded-3xl bg-[#E4F2EE] p-5 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#18366B]"
-                        >
-                            <span>
-                                <span className="block font-extrabold">ARでたまごに会おう</span>
-                                <span className="mt-1 block text-xs">カードにカメラを向けてみよう</span>
-                            </span>
-                            <ChevronRight aria-hidden="true" className="h-5 w-5 shrink-0" />
-                        </Link>
-
                         {/* 同意状態に関係なく読める案内 */}
                         <section
                             aria-labelledby="about-information"

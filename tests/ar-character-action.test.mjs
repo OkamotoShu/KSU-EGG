@@ -98,3 +98,51 @@ test("a saved mark is visible when AR starts again", () => {
   createCharacterAction({ THREE, anchor, characterType: 1, character, egg, existingMark: true });
   assert.ok(egg.children.some((child) => child.visible));
 });
+
+test("all saved marks are restored together when AR starts again", () => {
+  const character = new THREE.Object3D();
+  const egg = new THREE.Object3D();
+  const anchor = { group: new THREE.Group() };
+  anchor.group.add(character, egg);
+  character.position.set(-0.78, 0, 0.05);
+  character.scale.setScalar(0.92);
+  createCharacterAction({ THREE, anchor, characterType: 2, character, egg, existingMarks: [1, 2, 3] });
+  assert.equal(egg.children.filter((child) => child.visible).length, 3);
+});
+
+test("event interaction earns a mark without drawing it on the egg", () => {
+  let earned = 0;
+  const { action, egg } = setup(1, {
+    showPersistentMarks: false,
+    onMarkEarned: () => { earned += 1; },
+  });
+  action.update(3000);
+  assert.equal(earned, 1);
+  assert.equal(egg.children.filter((child) => child.visible).length, 0);
+});
+
+test("event yamachan returns to the side instead of staying on the egg", () => {
+  const { action, character } = setup(3, { settleAsHat: false, showPersistentMarks: false });
+  action.update(2700);
+  assert.ok(character.position.x < -0.65);
+  action.update(3000);
+  assert.equal(character.position.x, -0.78);
+  assert.equal(character.position.y, 0);
+});
+
+test("losing the target restores an egg to its nest-sized scale", () => {
+  const character = new THREE.Object3D();
+  const egg = new THREE.Object3D();
+  const anchor = { group: new THREE.Group() };
+  anchor.group.add(character, egg);
+  character.position.set(0.78, 0, 0.05);
+  character.scale.setScalar(0.92);
+  egg.position.y = 0.11;
+  egg.scale.setScalar(0.78);
+  const action = createCharacterAction({ THREE, anchor, characterType: 2, character, egg, showPersistentMarks: false });
+  action.start(1000);
+  action.update(1500);
+  action.onTargetLost();
+  assert.equal(egg.position.y, 0.11);
+  assert.equal(egg.scale.x, 0.78);
+});
