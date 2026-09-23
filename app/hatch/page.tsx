@@ -25,16 +25,24 @@ export default function HatchPage() {
   );
 
   useEffect(() => {
+    // ▼ 1. 現在のURL（replayパラメータがある場合は含める）からリダイレクトパスを生成
+    const currentUrl = `/hatch${isReplay ? "?replay=1" : ""}`;
+    const redirectPath = `/register?redirect=${encodeURIComponent(currentUrl)}`;
+
     const load = async (user: User) => {
       try {
         const snapshot = await getDoc(doc(db, "users", user.uid));
-        if (!snapshot.exists()) {
-          router.push("/register");
+        
+        // ▼ 2. ドキュメントが存在しない、または nickName が未設定なら登録画面へ
+        if (!snapshot.exists() || !snapshot.data()?.nickName) {
+          router.push(redirectPath);
           return;
         }
+        
         const data = snapshot.data();
         setNicknames(data.orderedNames || Object.keys(data.nickName || {}));
         setEggDataMap(data.nickName || {});
+        
         const scannedQRs: number[] = data.scannedQRs || [0, 0, 0, 0, 0, 0];
         const allScanned = !scannedQRs.slice(0, 5).includes(0);
         setIsAllScanned(allScanned);
@@ -45,15 +53,19 @@ export default function HatchPage() {
         setIsLoading(false);
       }
     };
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (!user) router.push("/register");
-      else {
+      if (!user) {
+        // ▼ 3. 未ログインの場合も生成したリダイレクトパスへ飛ばす
+        router.push(redirectPath);
+      } else {
         setCurrentUser(user);
         void load(user);
       }
     });
+    
     return () => unsubscribe();
-  }, [router]);
+  }, [router, isReplay]); // ← 依存配列に isReplay を追加
 
   const finishHatching = async () => {
     if (!currentUser || isUpdating) return;

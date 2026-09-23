@@ -12,16 +12,19 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Next.jsのSSR/SSG等で複数回初期化されるのを防ぐ
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// ▼ 1. 今回が「最初の初期化」かどうかを変数に保存しておく
+const isFirstInit = !getApps().length;
 
-export const db =
-  typeof window !== "undefined"
-    ? initializeFirestore(app, {
-        localCache: persistentLocalCache({
-          tabManager: persistentMultipleTabManager(),
-        }),
-      })
-    : getFirestore(app);
+// ▼ 2. app の初期化（なければ作る、あれば既存のものを使う）
+const app = isFirstInit ? initializeApp(firebaseConfig) : getApp();
+
+// ▼ 3. db の初期化（初回のみキャッシュ設定を含めて作成する）
+export const db = isFirstInit
+  ? initializeFirestore(app, {
+      localCache: typeof window !== "undefined" ? persistentLocalCache({
+        tabManager: persistentMultipleTabManager(),
+      }) : undefined,
+    })
+  : getFirestore(app);
 
 export const auth = getAuth(app);
