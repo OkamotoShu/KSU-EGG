@@ -8,6 +8,7 @@ import { onAuthStateChanged, User } from "firebase/auth"; // ▼ User型を追�
 import { doc, getDoc } from "firebase/firestore";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
+import { Egg, TriangleAlert } from "lucide-react";
 
 function LoadingContent() {
   const searchParams = useSearchParams();
@@ -57,7 +58,7 @@ function LoadingContent() {
             }
           } else {
             setIsAlreadyScanned(true);
-            setStatusMessage("この場所はすでに読み取り済みです！");
+            setStatusMessage("");
           }
         } else {
           router.push("/register");
@@ -81,24 +82,71 @@ function LoadingContent() {
   }, [qrIdParam, router]);
 
   return (
-    <div className="flex flex-col items-center text-center">
+    <div className="w-full max-w-sm rounded-3xl border border-[#18366B]/10 bg-white px-6 py-8 text-center shadow-[0_10px_30px_rgba(24,54,107,0.08)]">
+      {!isAlreadyScanned && (
+        <p className="text-xs font-extrabold tracking-[0.16em] text-[#A96500]">
+          QR CHECK
+        </p>
+      )}
+
       {!isAlreadyScanned && !hasError ? (
-        <div className="mb-6 h-16 w-16 animate-spin rounded-full border-4 border-gray-200 border-t-blue-600" />
+        <div
+          aria-hidden="true"
+          className="mx-auto mt-5 mb-6 h-16 w-16 animate-spin rounded-full border-[5px] border-[#E4F2EE] border-t-[#269D9C] motion-reduce:animate-none"
+        />
+      ) : isAlreadyScanned ? (
+        <div className="relative mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 border-[#E2A72F] bg-[#FFF0C2] text-[#A96500] shadow-sm">
+          <Egg aria-hidden="true" className="h-11 w-11" strokeWidth={1.8} />
+          <span
+            aria-label="読み取り済み"
+            className="absolute top-1/2 left-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 -rotate-12 items-center justify-center rounded-full border-[3px] border-[#B42332] bg-white/75 text-2xl font-black text-[#B42332] shadow-[inset_0_0_0_2px_rgba(180,35,50,0.25)]"
+          >
+            済
+          </span>
+        </div>
       ) : (
-        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-blue-100 text-3xl">
-          {isAlreadyScanned ? "🥚" : "⚠️"}
+        <div className="mx-auto mt-5 mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#FDE7E7] text-[#B42332]">
+          <TriangleAlert aria-hidden="true" className="h-10 w-10" strokeWidth={2} />
         </div>
       )}
-      
-      <h1 className="text-xl font-bold text-gray-700">{statusMessage}</h1>
-      
+
+      {!isAlreadyScanned && (
+        <h1 className="text-xl leading-relaxed font-extrabold text-[#18366B]">
+          {statusMessage}
+        </h1>
+      )}
+
+      {isAlreadyScanned && (
+        <p className="mt-3 text-sm leading-7 text-[#65748B]">
+          ARでもう一度キャラクターと遊べるよ。
+        </p>
+      )}
+
+      {hasError && (
+        <p className="mt-3 text-sm leading-7 text-[#65748B]">
+          QRコードをもう一度確認してから、読み取ってみてね。
+        </p>
+      )}
+
       {(isAlreadyScanned || hasError) && (
-        <button
-          onClick={() => router.push("/")}
-          className="mt-8 rounded-lg bg-blue-600 px-6 py-3 font-bold text-white transition-colors hover:bg-blue-700 active:scale-95 shadow-md"
-        >
-          ホームへ戻る
-        </button>
+        <div className="mt-7 flex flex-col gap-3">
+          {isAlreadyScanned && (
+            <button
+              type="button"
+              onClick={() => router.push(qrIdParam === "5" ? "/hatch?replay=1" : `/event?qrId=${qrIdParam}&replay=1`)}
+              className="min-h-14 w-full rounded-2xl bg-[#FFBC39] px-5 py-3 font-extrabold text-[#18366B] shadow-sm transition-colors hover:bg-[#FFB020] active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B]"
+            >
+              ARでもう一度遊ぶ
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className={`${isAlreadyScanned ? "min-h-12 border-2 border-[#18366B]/15 bg-[#FFFCF3]" : "min-h-14 bg-[#FFBC39] shadow-sm hover:bg-[#FFB020]"} w-full rounded-2xl px-5 py-3 font-extrabold text-[#18366B] transition-colors active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#18366B]`}
+          >
+            ホームへ戻る
+          </button>
+        </div>
       )}
     </div>
   );
@@ -108,8 +156,8 @@ export default function LoadingPage() {
   return (
     <>
       <Header />
-      <main className="flex min-h-dvh flex-col items-center justify-center bg-gray-50 pt-20 pb-24 px-4">
-        <Suspense fallback={<p className="text-gray-500">読み込み中...</p>}>
+      <main className="flex min-h-dvh flex-col items-center justify-center bg-[#FFFCF3] px-5 pt-24 pb-28 text-[#18366B]">
+        <Suspense fallback={<p className="font-bold text-[#65748B]">読み込み中...</p>}>
           <LoadingContent />
         </Suspense>
       </main>

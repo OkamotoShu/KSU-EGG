@@ -34,6 +34,7 @@ function EventContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const qrIdParam = searchParams.get("qrId");
+  const isReplay = searchParams.get("replay") === "1";
 
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -90,7 +91,12 @@ function EventContent() {
         setNicknames(names);
         setEggDataMap(data.nickName || {});
         setPreviousEggDataMap(Object.fromEntries(
-          Object.entries(data.nickName || {}).map(([name, answers]) => [name, [...(answers as number[])]])
+          Object.entries(data.nickName || {}).map(([name, answers]) => [
+            name,
+            isReplay
+              ? (answers as number[]).map((value, index) => index < parseInt(qrIdParam, 10) ? value : 0)
+              : [...(answers as number[])],
+          ])
         ));
         setARMarks(Object.fromEntries(
           Object.entries(data.arMarks || {}).map(([name, value]) => [
@@ -100,7 +106,10 @@ function EventContent() {
         ));
 
         const scannedQRs: number[] = data.scannedQRs || [0, 0, 0, 0, 0, 0];
-        const total = scannedQRs.reduce((sum, current) => sum + current, 0);
+        // 読み取り済みARの再体験では、QR番号に対応するイベントを開く
+        const total = isReplay
+          ? parseInt(qrIdParam, 10)
+          : scannedQRs.reduce((sum, current) => sum + current, 0);
         setTotalScans(total);
 
         const eventRef = doc(db, "event", total.toString());
@@ -114,6 +123,10 @@ function EventContent() {
           // ▼ DBの success フィールドを取得（なければデフォルト文言）
           setSuccessMessage(eventData.success || "たまごの様子が変わった！");
           setEventCharacter(getEventCharacter(eventData.character, total));
+          if (isReplay) {
+            setPhase("ar");
+            return;
+          }
           // 第5イベントはひび画像のタイトルを挟まず、ARの選択へ直接進む
           if (total === 4) setPhase("arChoice");
         } else {
@@ -139,7 +152,7 @@ function EventContent() {
     });
 
     return () => unsubscribe();
-  }, [qrIdParam, router]);
+  }, [isReplay, qrIdParam, router]);
 
   // 選択内容を保存するだけで、次の人には進まない
   const handleChoiceClick = (choiceIndex: number) => {
@@ -352,7 +365,10 @@ function EventContent() {
       {phase === "ar" && (
         <EventARPhase
           players={nicknames.map((name) => {
-            const answers = eggDataMap[name] || [];
+            const savedAnswers = eggDataMap[name] || [];
+            const answers = isReplay
+              ? savedAnswers.map((value, index) => index <= totalScans ? value : 0)
+              : savedAnswers;
             const previousAnswers = previousEggDataMap[name] || [];
             // p03では選んだ色のたまごを使って交流を始める
             const arBeforeColor = totalScans === 2
@@ -375,9 +391,9 @@ function EventContent() {
           })}
           character={eventCharacter}
           mode={totalScans === 4 ? "awakening" : "normal"}
-          isSaving={isUpdating}
-          onComplete={() => void handleEventComplete(true)}
-          onSkip={() => void handleEventComplete(false)}
+          isSaving={isReplay ? false : isUpdating}
+          onComplete={() => isReplay ? router.push("/") : void handleEventComplete(true)}
+          onSkip={() => isReplay ? router.push("/") : void handleEventComplete(false)}
         />
       )}
 
