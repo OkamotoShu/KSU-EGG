@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // 配布済みの外部ライブラリは検査対象にしない
+    "public/ar/vendor/**",
   ]),
 ]);
 
