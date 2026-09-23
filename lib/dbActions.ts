@@ -1,7 +1,7 @@
 // lib/dbActions.ts
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth"; // User型を追加インポート
-import { doc, getDoc, DocumentData, collection, addDoc, FieldPath, updateDoc } from "firebase/firestore";
+import { doc, getDoc, DocumentData, collection, addDoc, FieldPath, runTransaction } from "firebase/firestore";
 
 /**
  * 現在のログインユーザーを取得する（認証完了まで待機するヘルパー関数）
@@ -55,7 +55,16 @@ export async function saveARMark(playerName: string, markType: 1 | 2 | 3) {
   if (!user) throw new Error("ログインしてください");
 
   const userRef = doc(db, "users", user.uid);
-  await updateDoc(userRef, new FieldPath("arMarks", playerName), markType);
+  await runTransaction(db, async (transaction) => {
+    const snapshot = await transaction.get(userRef);
+    const savedValue = snapshot.data()?.arMarks?.[playerName];
+    // 旧形式の数値も配列へ変換し、すでにある印を残す
+    const currentMarks: number[] = Array.isArray(savedValue)
+      ? savedValue
+      : [1, 2, 3].includes(savedValue) ? [savedValue] : [];
+    const nextMarks = Array.from(new Set([...currentMarks, markType])).sort();
+    transaction.update(userRef, new FieldPath("arMarks", playerName), nextMarks);
+  });
 }
 
 // ▼ 追加: ログを保存する関数

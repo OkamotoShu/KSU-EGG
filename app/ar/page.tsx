@@ -12,9 +12,11 @@ type Status = "idle" | "starting" | "searching" | "found" | "error";
 export default function ARPage() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
-  const [players, setPlayers] = useState<Array<{ name: string; eggType: number; color: number; character: 1 | 2 | 3; hasMark: boolean }>>([]);
+  const [players, setPlayers] = useState<Array<{ name: string; eggType: number; color: number; preferredCharacter: 1 | 2 | 3; marks: Array<1 | 2 | 3> }>>([]);
   const [playerIndex, setPlayerIndex] = useState(0);
-  const [activeMark, setActiveMark] = useState(false);
+  const [characterType, setCharacterType] = useState<1 | 2 | 3>(1);
+  const [activeCharacter, setActiveCharacter] = useState<1 | 2 | 3>(1);
+  const [activeMarks, setActiveMarks] = useState<Array<1 | 2 | 3>>([]);
   const frameRef = useRef<HTMLIFrameElement>(null);
   const active = status === "starting" || status === "searching" || status === "found";
   const player = players[playerIndex];
@@ -27,14 +29,18 @@ export default function ARPage() {
       setPlayers(names.map((name) => {
         const answers = data.nickName[name] || [];
         const character = ([1, 2, 3].includes(answers[1]) ? answers[1] : 1) as 1 | 2 | 3;
+        const savedMarks = data.arMarks?.[name];
         return {
           name,
           eggType: [1, 2].includes(answers[0]) ? answers[0] : 1,
-          character,
+          preferredCharacter: character,
           color: [1, 2, 3, 4].includes(answers[2]) ? answers[2] : 1,
-          hasMark: data.arMarks?.[name] === character,
+          marks: (Array.isArray(savedMarks) ? savedMarks : [savedMarks])
+            .filter((mark): mark is 1 | 2 | 3 => [1, 2, 3].includes(Number(mark))),
         };
       }));
+      const firstAnswers = data.nickName[names[0]] || [];
+      setCharacterType(([1, 2, 3].includes(firstAnswers[1]) ? firstAnswers[1] : 1) as 1 | 2 | 3);
     }).catch((loadError) => console.error("AR用データの取得に失敗しました:", loadError));
   }, []);
 
@@ -45,11 +51,11 @@ export default function ARPage() {
       if (event.data?.type !== "ksu-ar") return;
       if (event.data.action === "mark-earned") {
         const currentPlayer = players[playerIndex];
-        if (!currentPlayer || currentPlayer.hasMark || event.data.markType !== currentPlayer.character) return;
-        setPlayers((current) => current.map((item, index) => index === playerIndex ? { ...item, hasMark: true } : item));
-        void saveARMark(currentPlayer.name, currentPlayer.character).catch((saveError) => {
+        if (!currentPlayer || currentPlayer.marks.includes(activeCharacter) || event.data.markType !== activeCharacter) return;
+        setPlayers((current) => current.map((item, index) => index === playerIndex ? { ...item, marks: [...item.marks, activeCharacter] } : item));
+        void saveARMark(currentPlayer.name, activeCharacter).catch((saveError) => {
           console.error("ARの印の保存に失敗しました:", saveError);
-          setPlayers((current) => current.map((item, index) => index === playerIndex ? { ...item, hasMark: false } : item));
+          setPlayers((current) => current.map((item, index) => index === playerIndex ? { ...item, marks: item.marks.filter((mark) => mark !== activeCharacter) } : item));
         });
         return;
       }
@@ -73,7 +79,7 @@ export default function ARPage() {
       window.removeEventListener("pagehide", onPageHide);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [playerIndex, players]);
+  }, [activeCharacter, playerIndex, players]);
 
   useEffect(() => {
     if (status !== "starting") return;
@@ -92,7 +98,8 @@ export default function ARPage() {
       return;
     }
     setError("");
-    setActiveMark(player?.hasMark ?? false);
+    setActiveCharacter(characterType);
+    setActiveMarks(player?.marks ?? []);
     setStatus("starting");
   };
 
@@ -103,7 +110,7 @@ export default function ARPage() {
           {/* フレームを外すとカメラ・ワーカーも破棄される */}
           <iframe
             ref={frameRef}
-            src={`/ar/viewer.html?character=${player?.character ?? 1}&egg=${encodeURIComponent(`/egg_${player?.eggType ?? 1}_${player?.color ?? 1}.png`)}&mark=${activeMark ? 1 : 0}`}
+            src={`/ar/viewer.html?character=${activeCharacter}&egg=${encodeURIComponent(`/egg_${player?.eggType ?? 1}_${player?.color ?? 1}.png`)}&marks=${activeMarks.join(",")}`}
             title="ARカメラ"
             allow="camera"
             className="fixed inset-0 h-dvh w-full border-0 bg-[#18366B]"
@@ -140,13 +147,34 @@ export default function ARPage() {
               ARで表示するプレイヤー
               <select
                 value={playerIndex}
-                onChange={(event) => setPlayerIndex(Number(event.target.value))}
+                onChange={(event) => {
+                  const nextIndex = Number(event.target.value);
+                  setPlayerIndex(nextIndex);
+                  setCharacterType(players[nextIndex]?.preferredCharacter ?? 1);
+                }}
                 className="mt-2 min-h-12 w-full rounded-2xl border border-[#18366B]/20 bg-white px-4"
               >
                 {players.map((item, index) => (
                   <option key={item.name} value={index}>{item.name}さん</option>
                 ))}
               </select>
+            </label>
+          )}
+          {player && (
+            <label className="mb-4 block text-sm font-bold">
+              いっしょに遊ぶキャラクター
+              <select
+                value={characterType}
+                onChange={(event) => setCharacterType(Number(event.target.value) as 1 | 2 | 3)}
+                className="mt-2 min-h-12 w-full rounded-2xl border border-[#18366B]/20 bg-white px-4"
+              >
+                <option value={1}>こやまちゃん{player.marks.includes(1) ? "　★ もらったよ" : ""}</option>
+                <option value={2}>むすぶくん{player.marks.includes(2) ? "　♥ もらったよ" : ""}</option>
+                <option value={3}>やまちゃん{player.marks.includes(3) ? "　◎ もらったよ" : ""}</option>
+              </select>
+              <span className="mt-2 block text-xs font-normal text-[#65748B]">
+                あつめた印：{player.marks.length} / 3
+              </span>
             </label>
           )}
           {error && <p role="alert" className="mb-4 rounded-2xl bg-[#FFF0EE] p-4 text-sm leading-6 text-[#B42332]">{error}</p>}

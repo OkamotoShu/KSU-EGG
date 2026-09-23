@@ -70,7 +70,10 @@ async function start() {
     await response.arrayBuffer();
     const params = new URLSearchParams(window.location.search);
     const characterType = [1, 2, 3].includes(Number(params.get("character"))) ? Number(params.get("character")) : 1;
-    const existingMark = params.get("mark") === "1";
+    const existingMarks = (params.get("marks") || "")
+      .split(",")
+      .map(Number)
+      .filter((markType) => [1, 2, 3].includes(markType));
     const characterNames = ["", "koyamachan", "musubukun", "yamachan"];
     const safeEgg = /^\/egg_[12]_[1-4]\.png$/.test(params.get("egg") || "") ? params.get("egg") : "/egg_1_1.png";
     [texture, characterTexture] = await Promise.all([
@@ -108,7 +111,8 @@ async function start() {
     characterAction = createCharacterAction({
       THREE, anchor, characterType, character, egg,
       reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-      existingMark,
+      existingMarks,
+      showPersistentMarks: false,
       onMarkEarned: notifyMarkEarned,
     });
     soundEffects = createSoundEffects(characterType);

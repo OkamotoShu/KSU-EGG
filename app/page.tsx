@@ -16,7 +16,6 @@ export default function Home() {
   const [nicknames, setNicknames] = useState<string[]>([]);
   const [eggDataMap, setEggDataMap] = useState<Record<string, number[]>>({});
   const [scannedQRs, setScannedQRs] = useState<number[]>([0, 0, 0, 0, 0, 0]);
-  const [arMarks, setARMarks] = useState<Record<string, 1 | 2 | 3>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -35,7 +34,6 @@ export default function Home() {
         // ▼ 取得したデータをそのまま保存
         setEggDataMap(data.nickName);
         setScannedQRs(data.scannedQRs || [0, 0, 0, 0, 0, 0]);
-        setARMarks(data.arMarks || {});
         if (!localStorage.getItem("tutorialSeen")) {
           setShowTutorial(true);
         }
@@ -278,7 +276,7 @@ export default function Home() {
                   nestSrc={nestSrc}
                   patternSrc={patternSrc}
                   auraSrc={auraSrc}
-                  markType={arMarks[currentName]}
+                  crackSrc={!isHatched && scannedQRs[4] === 1 ? "/crack.png" : undefined}
                 />
               </div>
             </div>

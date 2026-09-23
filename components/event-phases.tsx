@@ -316,20 +316,30 @@ export function ConfirmPhase({
 // ▼ 新規追加：たまごのみを表示するコンポーネント
 export function EggDisplay({
   eggImagePath,
+  nestImagePath,
   patternImagePath,
+  crackImagePath,
   showPattern,
   sizeClass = "max-w-[200px]",
 }: {
   eggImagePath: string;
+  nestImagePath?: string;
   patternImagePath: string;
+  crackImagePath?: string;
   showPattern: boolean;
   sizeClass?: string;
 }) {
   return (
     <div className={`relative mx-auto flex w-full ${sizeClass} aspect-square justify-center drop-shadow-lg`}>
-      <img src={eggImagePath} alt="たまご" className="absolute inset-0 m-auto h-full w-full object-contain" />
+      {nestImagePath && (
+        <img src={nestImagePath} alt="たまごの巣" className="absolute inset-0 z-0 m-auto h-full w-full object-contain" />
+      )}
+      <img src={eggImagePath} alt="たまご" className={`absolute inset-0 z-10 m-auto h-full w-full object-contain ${nestImagePath ? "-translate-y-[12%] scale-[0.82]" : ""}`} />
       {showPattern && (
-        <img src={patternImagePath} alt="模様" className="absolute inset-0 m-auto h-full w-full object-contain" />
+        <img src={patternImagePath} alt="模様" className={`absolute inset-0 z-20 m-auto h-full w-full object-contain ${nestImagePath ? "-translate-y-[12%] scale-[0.82]" : ""}`} />
+      )}
+      {crackImagePath && (
+        <img src={crackImagePath} alt="たまごのひび" className={`absolute inset-0 z-30 m-auto h-full w-full object-contain ${nestImagePath ? "-translate-y-[12%] scale-[0.82]" : ""}`} />
       )}
     </div>
   );
