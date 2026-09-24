@@ -25,7 +25,7 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
     return mesh;
   });
 
-  // やまくん用の魔法陣と光の粒
+  // 神山くん用の魔法陣と光の粒
   const ringGeometry = new THREE.RingGeometry(0.42, 0.46, 48);
   const ringMaterial = new THREE.MeshBasicMaterial({ color: effectColor, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
   const magicRing = new THREE.Mesh(ringGeometry, ringMaterial);
@@ -208,7 +208,7 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
           heart.material.opacity = Math.max(0, Math.sin(local * Math.PI));
         });
       } else {
-        // やまくん：魔法陣を展開し、帽子としてたまごに着地する
+        // 神山くん：魔法陣を展開し、帽子としてたまごに着地する
         const cast = smooth(Math.min(1, progress / 0.32));
         const land = smooth(Math.min(1, Math.max(0, (progress - 0.28) / 0.36)));
         if (wearingHat) {

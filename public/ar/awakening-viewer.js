@@ -8,6 +8,7 @@ const geometries = [];
 const materials = [];
 const sounds = [];
 let focusDecoration;
+let ritualMessage;
 
 const notify = (status, detail = {}) => {
   if (!stopped) window.parent.postMessage({ type: "ksu-event-ar", status, ...detail }, window.location.origin);
@@ -35,6 +36,7 @@ const stop = () => {
   });
   sounds.forEach((sound) => sound.close());
   focusDecoration?.dispose();
+  ritualMessage?.dispose();
   textures.forEach((item) => item.dispose());
   geometries.forEach((item) => item.dispose());
   materials.forEach((item) => item.dispose());
@@ -51,11 +53,12 @@ window.addEventListener("unhandledrejection", (event) => {
 
 async function start() {
   try {
-    const [THREE, { MindARThree }, { createSoundEffects }, { createFocusDecoration }] = await Promise.all([
+    const [THREE, { MindARThree }, { createSoundEffects }, { createFocusDecoration }, { createRitualMessage }] = await Promise.all([
       import("three"),
       import("/ar/vendor/mindar-image-three.prod.js"),
       import("/ar/sound-effects.mjs"),
       import("/ar/focus-decoration.mjs"),
+      import("/ar/ritual-message.mjs"),
     ]);
     const params = new URLSearchParams(window.location.search);
     const rawPlayers = JSON.parse(params.get("players") || "[]");
@@ -98,6 +101,7 @@ async function start() {
     });
     const anchor = ar.addAnchor(0);
     focusDecoration = createFocusDecoration({ THREE, scene: ar.scene, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches });
+    ritualMessage = createRitualMessage({ THREE, container, camera: ar.camera });
     const eggs = [];
     const cracks = [];
     const glows = [];
@@ -196,7 +200,7 @@ async function start() {
       sounds.push(createSoundEffects(index + 1));
     }
 
-    // ほしみ〜るちゃんは星、むすぶくんはハート、やまくんは魔法の渦を出す
+    // ほしみ〜るちゃんは星、むすぶくんはハート、神山くんは魔法の渦を出す
     const starShape = new THREE.Shape();
     for (let index = 0; index < 10; index++) {
       const angle = Math.PI / 2 + index * Math.PI / 5;
@@ -248,6 +252,7 @@ async function start() {
     let activeCharacter = null;
     let activeStartedAt = null;
     let finaleStartedAt = null;
+    let finaleCrackPlayed = false;
 
     const resetCharacter = (index) => {
       const base = characterBases[index];
@@ -257,7 +262,7 @@ async function start() {
     };
 
     const onPointerDown = (event) => {
-      if (activeCharacter !== null || finaleStartedAt !== null || completed || !anchor.group.visible) return;
+      if (activeCharacter !== null || finaleStartedAt !== null || !anchor.group.visible) return;
       const rect = ar.renderer.domElement.getBoundingClientRect();
       pointer.set(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1);
       ar.scene.updateMatrixWorld(true);
@@ -272,6 +277,7 @@ async function start() {
       activeCharacter = index;
       activeStartedAt = performance.now();
       sounds[index].play();
+      navigator.vibrate?.(index === 0 ? [30, 20, 30] : index === 1 ? 45 : [25, 25, 45]);
     };
     container.addEventListener("pointerdown", onPointerDown);
 
@@ -280,6 +286,14 @@ async function start() {
       notify(completed ? "complete" : "found");
       if (!completed && activated.size === 3 && finaleStartedAt === null) {
         finaleStartedAt = performance.now() + 250;
+        ritualMessage.show({
+          message: "はやくでておいで",
+          speaker: "みんな",
+          target: anchor.group,
+          localPosition: new THREE.Vector3(0, 0.72, 0.22),
+          time: performance.now(),
+          showFor: 2150,
+        });
       }
     };
     anchor.onTargetLost = () => {
@@ -288,6 +302,8 @@ async function start() {
       activeStartedAt = null;
       if (!completed && finaleStartedAt !== null) {
         finaleStartedAt = null;
+        finaleCrackPlayed = false;
+        ritualMessage.hide();
         eggs.forEach((egg, index) => {
           egg.rotation.z = 0;
           egg.scale.setScalar(players[index].nest ? 0.78 : 1);
@@ -358,12 +374,29 @@ async function start() {
           activeStartedAt = null;
           hideEffects();
           notify("progress", { completedCount: activated.size });
-          if (activated.size === 3) finaleStartedAt = now + 250;
+          // 三人の初回演出後だけ最終演出へ進み、完了後は何度でも再生できる
+          if (!completed && activated.size === 3) {
+            finaleCrackPlayed = false;
+            finaleStartedAt = now + 250;
+            ritualMessage.show({
+              message: "はやくでておいで",
+              speaker: "みんな",
+              target: anchor.group,
+              localPosition: new THREE.Vector3(0, 0.72, 0.22),
+              time: now,
+              showFor: 2150,
+            });
+          }
         }
       }
 
       if (finaleStartedAt !== null && now >= finaleStartedAt) {
         const progress = Math.min(1, (now - finaleStartedAt) / 1900);
+        if (progress >= 0.48 && !finaleCrackPlayed) {
+          finaleCrackPlayed = true;
+          sounds[0].playCrack();
+          navigator.vibrate?.([70, 35, 110]);
+        }
         const pulse = Math.sin(progress * Math.PI * 8) * (1 - progress);
         eggs.forEach((egg, index) => {
           egg.rotation.z = pulse * 0.12;
@@ -388,6 +421,7 @@ async function start() {
           notify("complete");
         }
       }
+      ritualMessage.update(now);
       focusDecoration.update(now);
       ar.renderer.render(ar.scene, ar.camera);
     });

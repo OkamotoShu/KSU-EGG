@@ -306,7 +306,7 @@ export function ConfirmPhase({
           return (
             <div
               key={name}
-              className="grid min-h-0 grid-cols-[1fr_auto] grid-rows-[auto_1fr_auto] gap-x-3 rounded-2xl border border-[#18366B]/10 bg-white px-4 py-3"
+              className="grid h-[clamp(0px,22dvh,190px)] grid-cols-[1fr_auto] grid-rows-[auto_1fr_auto] gap-x-3 rounded-2xl border border-[#18366B]/10 bg-white px-4 py-3"
             >
               {/* 名前を左上に大きめに表示 */}
               <p className="col-span-2 text-base font-extrabold text-[#18366B] [overflow-wrap:anywhere]">

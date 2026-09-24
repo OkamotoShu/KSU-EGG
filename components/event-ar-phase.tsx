@@ -42,7 +42,6 @@ export function EventARPhase({
   const cameraSupported = browserReady
     ? Boolean(window.isSecureContext && navigator.mediaDevices?.getUserMedia)
     : null;
-  const characterNames = ["", "ほしみ〜るちゃん", "むすぶくん", "やまくん"];
   const source = useMemo(() => {
     const data = encodeURIComponent(JSON.stringify(players));
     const viewer = mode === "awakening"
@@ -127,15 +126,6 @@ export function EventARPhase({
           <span className="absolute bottom-3 left-3 h-4 w-4 rounded-full bg-[#C9DB22] ring-4 ring-[#FFFCF3]" />
           <span className="absolute right-3 bottom-3 h-4 w-4 rounded-full bg-[#18366B] ring-4 ring-[#FFFCF3]" />
         </div>
-        <div className="absolute inset-x-5 top-5 z-20 rounded-2xl bg-[#FFFCF3]/95 px-4 py-3 text-center">
-          <p role="status" className="truncate text-sm font-extrabold text-[#18366B]">
-          {status === "starting" && "カメラを準備しています..."}
-          {status === "searching" && "カード全体をカメラに映してね"}
-          {status === "found" && (mode === "awakening" ? "三人を順番にタップしてね！" : mode === "hatch" ? "ひびの入ったたまごをタップしてね！" : `${characterNames[character]}が、みんなのたまごと遊んでいるよ！`)}
-          {status === "finished" && (mode === "awakening" ? "たまごに小さなひびが入ったよ！" : mode === "hatch" ? "みんなのモンスターが生まれたよ！" : "みんなのたまごとの遊びが終わったよ！")}
-          {status === "error" && "カメラを開始できませんでした"}
-          </p>
-        </div>
         {mode === "hatch" && status === "found" && !hasTapped && (
           <div className="pointer-events-none absolute inset-x-0 top-1/2 z-20 flex -translate-y-1/2 justify-center">
             <p className="animate-pulse rounded-full bg-[#FFFCF3]/90 px-4 py-2 text-xs font-extrabold text-[#18366B] shadow-sm motion-reduce:animate-none">
@@ -180,7 +170,7 @@ export function EventARPhase({
                 : mode === "hatch"
                   ? `たまごを3回タップしてね　孵化 ${completedCount} / ${players.length}`
                 : `たまごをタップしてね　${completedCount} / ${players.length}`
-              : "明るい場所で、カードから少し離してね"
+              : "スタッフが提示するカード全体をカメラに映してね"
         )}
         </div>
       </div>

@@ -170,7 +170,7 @@ export default function ARPage() {
               >
                 <option value={1}>ほしみ〜るちゃん{player.marks.includes(1) ? "　★ もらったよ" : ""}</option>
                 <option value={2}>むすぶくん{player.marks.includes(2) ? "　♥ もらったよ" : ""}</option>
-                <option value={3}>やまくん{player.marks.includes(3) ? "　◎ もらったよ" : ""}</option>
+                <option value={3}>神山くん{player.marks.includes(3) ? "　◎ もらったよ" : ""}</option>
               </select>
               <span className="mt-2 block text-xs font-normal text-[#65748B]">
                 あつめた印：{player.marks.length} / 3
