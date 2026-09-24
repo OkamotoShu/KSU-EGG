@@ -148,8 +148,8 @@ export default function Home() {
   > = {
     1: { background: "#F8D5DF", border: "#DCA5B6", foreground: "#863D55" },
     2: { background: "#D4EDF3", border: "#9FC8D5", foreground: "#315E70" },
-    3: { background: "#F9EFAE", border: "#D9CA7D", foreground: "#756020" },
-    4: { background: "#D9EBCF", border: "#ADC79D", foreground: "#456338" },
+    3: { background: "#D9EBCF", border: "#83B96B", foreground: "#456338" },
+    4: { background: "#E9DDF8", border: "#A98BDD", foreground: "#65419C" },
   };
 
   const neutralButtonColors = {

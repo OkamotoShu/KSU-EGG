@@ -4,7 +4,7 @@ export type EventCharacter = 1 | 2 | 3;
 export const CHARACTER_DETAILS: Record<EventCharacter, { name: string; imageSrc: string }> = {
   1: { name: "ほしみ〜るちゃん", imageSrc: "/ar/characters/koyamachan.png" },
   2: { name: "むすぶくん", imageSrc: "/ar/characters/musubukun.png" },
-  3: { name: "やまくん", imageSrc: "/ar/characters/yamachan.png" },
+  3: { name: "神山くん", imageSrc: "/ar/characters/yamachan.png" },
 };
 
 export type EventDefinition = {
@@ -28,10 +28,10 @@ export const EVENT_DEFINITIONS: Record<number, EventDefinition> = {
     titleVisual: "event",
   },
   1: {
-    title: "たまごがころがりそう！いっしょに巣を作ろう！",
+    title: "たまごがころがりそう！いっしょにベッドを作ろう！",
     content: "どの素材なら、たまごが安心できるかな？",
     choices: ["きのえだ", "ほね", "くも"],
-    success: "巣が完成してたまごが安定したよ",
+    success: "ベッドが完成してたまごが安定したよ",
     character: 2,
     imageSrc: "/event_1.png",
     // p02を読み取った直後は、イベント画像ではなく現在のたまごを見せる
@@ -56,7 +56,7 @@ export const EVENT_DEFINITIONS: Record<number, EventDefinition> = {
   },
   4: {
     title: "みんなが、たまごの変化に気づいたよ",
-    content: "ほしみ〜るちゃん、むすぶくん、やまくんが、たまごを応援しているよ。",
+    content: "ほしみ〜るちゃん、むすぶくん、神山くんが、たまごを応援しているよ。",
     choices: [],
     success: "たまごに小さなひびが入ったよ",
     // p04では三人とも登場するため、この値は通常ARでは使用しない
