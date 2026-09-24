@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation"; // ▼ useSearchPa
 import { auth, db } from "@/lib/firebase";
 import { signInAnonymously } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { Header } from "@/components/header";
+import { AuthHeader } from "@/components/auth-header";
 import { postCollectionInLogs } from "@/lib/dbActions";
 import { ChevronDown } from "lucide-react";
 import { EntryGuard } from "@/components/entry-guard";
@@ -110,7 +110,7 @@ function RegisterContent() {
 
   return (
     <>
-      <Header />
+      <AuthHeader />
 
       <main className="flex min-h-dvh flex-col items-center bg-[#FFFCF3] px-5 pt-28 pb-8 text-[#18366B]">
         <div className="my-auto w-full max-w-sm">

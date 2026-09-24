@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Header } from "@/components/header";
+import { AuthHeader } from "@/components/auth-header";
 import { EntryGuard } from "@/components/entry-guard";
 
 function ConsentContent() {
@@ -35,7 +35,7 @@ function ConsentContent() {
 
     return (
         <>
-            <Header />
+            <AuthHeader />
 
             <main className="min-h-dvh bg-[#FFFCF3] px-5 pt-28 pb-[calc(8rem+env(safe-area-inset-bottom))] text-[#18366B]">        <div className="mx-auto w-full max-w-md">
                 {/* ページタイトル */}

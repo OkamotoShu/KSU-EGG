@@ -11,6 +11,7 @@ import { Footer } from "@/components/footer";
 import { EggDisplay } from "@/components/egg_display";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { TutorialModal } from "@/components/tutorial_modal";
+import { HomeSkeleton } from "@/components/home-skeleton";
 import Link from "next/link";
 
 export default function Home() {
@@ -107,12 +108,17 @@ export default function Home() {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex min-h-dvh items-center justify-center bg-gray-50">
-        <p className="text-gray-500">データを読み込み中...</p>
-      </div>
-    );
-  }
+  return (
+    <>
+      <Header />
+      {/* ヘッダーの下敷きにならないよう pt-24 などの余白を設定 */}
+      <main className="flex min-h-dvh flex-col items-center bg-[#FFFCF3] pt-24 pb-[calc(2rem+env(safe-area-inset-bottom))]">
+        <HomeSkeleton />
+      </main>
+      <Footer /> {/* ※もしホームにFooterがあれば追加してください */}
+    </>
+  );
+}
 
   const currentName = nicknames[currentIndex] || "プレイヤー";
 
