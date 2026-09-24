@@ -42,7 +42,7 @@ export function EventARPhase({
   const cameraSupported = browserReady
     ? Boolean(window.isSecureContext && navigator.mediaDevices?.getUserMedia)
     : null;
-  const characterNames = ["", "こやまちゃん", "むすぶくん", "やまちゃん"];
+  const characterNames = ["", "ほしみ〜るちゃん", "むすぶくん", "やまくん"];
   const source = useMemo(() => {
     const data = encodeURIComponent(JSON.stringify(players));
     const viewer = mode === "awakening"
