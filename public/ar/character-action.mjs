@@ -178,32 +178,32 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
         const orbitProgress = Math.min(1, progress / 0.82);
         const angle = Math.PI + orbitProgress * Math.PI * 2;
         const returnEase = smooth(Math.max(0, (progress - 0.82) / 0.18));
-        const orbitX = Math.cos(angle) * 0.82;
-        const orbitY = Math.sin(angle) * 0.38 + 0.02;
+        const orbitX = Math.cos(angle) * 1.02;
+        const orbitY = Math.sin(angle) * 0.5 + 0.04;
         const orbitZ = Math.sin(angle) < 0 ? 0.01 : 0.09;
-        const orbitScale = base.characterScale * (0.82 + (Math.sin(angle) + 1) * 0.16);
+        const orbitScale = base.characterScale * (0.76 + (Math.sin(angle) + 1) * 0.23);
         character.position.x = THREE.MathUtils.lerp(orbitX, base.characterX, returnEase);
         character.position.y = THREE.MathUtils.lerp(orbitY, base.characterY, returnEase);
         character.position.z = THREE.MathUtils.lerp(orbitZ, base.characterZ, returnEase);
         character.renderOrder = returnEase === 1 ? 0 : (Math.sin(angle) < 0 ? -1 : 2);
         character.scale.setScalar(THREE.MathUtils.lerp(orbitScale, base.characterScale, returnEase));
         character.rotation.z = THREE.MathUtils.lerp(-Math.cos(angle) * 0.2, 0, returnEase);
-        egg.rotation.z += Math.sin(progress * Math.PI * 8) * 0.012 * (1 - returnEase);
+        egg.rotation.z += Math.sin(progress * Math.PI * 10) * 0.022 * (1 - returnEase);
       } else if (characterType === 2) {
         // むすぶくん：近づいて大きく包み込み、ハートを飛ばす
         const approach = smooth(Math.min(1, progress / 0.42));
         const leave = smooth(Math.max(0, (progress - 0.68) / 0.32));
         const embrace = approach * (1 - leave);
-        character.position.x = base.characterX - embrace * 0.62;
-        character.position.y = base.characterY + embrace * 0.05;
-        character.scale.setScalar(base.characterScale * (1 + embrace * 0.38));
+        character.position.x = base.characterX - embrace * 0.72;
+        character.position.y = base.characterY + embrace * 0.1;
+        character.scale.setScalar(base.characterScale * (1 + embrace * 0.55));
         character.renderOrder = 2;
-        egg.scale.setScalar(base.eggScale * (1 - embrace * 0.14 + Math.sin(progress * Math.PI * 6) * 0.015 * (1 - leave)));
+        egg.scale.setScalar(base.eggScale * (1 - embrace * 0.19 + Math.sin(progress * Math.PI * 7) * 0.025 * (1 - leave)));
         hearts.forEach((heart, index) => {
           const local = Math.max(0, progress - index * 0.045);
           heart.visible = local > 0.16 && progress < 0.92;
-          heart.position.set(-0.3 + index * 0.15, 0.2 + local * 0.78 + Math.sin(index * 2) * 0.05, 0.1);
-          heart.scale.setScalar(0.55 + Math.sin(local * Math.PI * 3) * 0.22);
+          heart.position.set(-0.38 + index * 0.19, 0.16 + local * 1.02 + Math.sin(index * 2) * 0.08, 0.1);
+          heart.scale.setScalar(0.7 + Math.sin(local * Math.PI * 3) * 0.34);
           heart.rotation.z = (index - 2) * 0.16;
           heart.material.opacity = Math.max(0, Math.sin(local * Math.PI));
         });
@@ -222,19 +222,19 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
         character.position.z = 0.11;
         character.rotation.z = Math.sin(progress * Math.PI * 8) * 0.045 * (1 - land);
         character.renderOrder = 3;
-        egg.position.y = base.eggY + pulse * 0.1;
-        egg.scale.setScalar(base.eggScale * (1 + pulse * 0.08));
+        egg.position.y = base.eggY + pulse * 0.16;
+        egg.scale.setScalar(base.eggScale * (1 + pulse * 0.13));
         magicRing.visible = progress > 0.08 && progress < 0.88;
         magicRing.position.set(0, 0, 0.08);
         magicRing.rotation.z = progress * Math.PI * 4;
-        magicRing.scale.setScalar(0.7 + pulse * 0.75);
-        magicRing.material.opacity = Math.sin(progress * Math.PI) * 0.75;
+        magicRing.scale.setScalar(0.58 + pulse * 1.28);
+        magicRing.material.opacity = Math.sin(progress * Math.PI) * 0.95;
         orbs.forEach((orb, index) => {
           const angle = progress * Math.PI * 5 + index * Math.PI * 2 / orbs.length;
-          const radius = 0.42 + pulse * 0.3;
+          const radius = 0.42 + pulse * 0.52;
           orb.visible = magicRing.visible;
           orb.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius, 0.1);
-          orb.scale.setScalar(0.7 + Math.sin(progress * Math.PI * 4 + index) * 0.3);
+          orb.scale.setScalar(0.9 + Math.sin(progress * Math.PI * 4 + index) * 0.42);
           orb.material.opacity = Math.sin(progress * Math.PI);
         });
         if (showPersistentMarks && !wearingHat && progress > 0.62) {

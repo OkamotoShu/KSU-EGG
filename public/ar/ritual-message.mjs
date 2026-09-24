@@ -15,7 +15,7 @@ export function createRitualMessage({ THREE, container, camera }) {
     "border:3px solid #FFBC39",
     "border-radius:24px",
     "background:rgba(255,252,243,.96)",
-    "box-shadow:0 0 24px rgba(255,188,57,.55),0 8px 20px rgba(24,54,107,.18)",
+    "box-shadow:0 0 36px rgba(255,188,57,.8),0 10px 24px rgba(24,54,107,.24)",
     "color:#18366B",
     "text-align:center",
     "pointer-events:none",
@@ -65,11 +65,11 @@ export function createRitualMessage({ THREE, container, camera }) {
       const height = container.clientHeight;
       const x = THREE.MathUtils.clamp((screenPosition.x * 0.5 + 0.5) * width, width * 0.12, width * 0.88);
       const y = THREE.MathUtils.clamp((-screenPosition.y * 0.5 + 0.5) * height, height * 0.2, height * 0.82);
-      const floatY = progress * 12 + Math.sin(progress * Math.PI * 3) * 3;
+      const floatY = progress * 20 + Math.sin(progress * Math.PI * 4) * 5;
       bubble.style.left = `${x}px`;
       bubble.style.top = `${y}px`;
       bubble.style.opacity = String(screenPosition.z >= -1 && screenPosition.z <= 1 ? visibility : 0);
-      bubble.style.transform = `translate(-50%,-100%) translateY(${-floatY}px) scale(${0.7 + eased * 0.3})`;
+      bubble.style.transform = `translate(-50%,-100%) translateY(${-floatY}px) scale(${0.58 + eased * 0.5 + Math.sin(progress * Math.PI) * 0.08})`;
 
       if (progress >= 1) {
         bubble.style.display = "none";
