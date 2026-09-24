@@ -302,8 +302,8 @@ async function start() {
           const lightColors = {
             1: 0xff6f91,
             2: 0x55c8f2,
-            3: 0xffdf55,
-            4: 0x55d98b,
+            3: 0x55d98b,
+            4: 0x9b6de3,
           };
           group.attach(character);
           character.position.set(characterType === 2 ? 0.78 : -0.78, characterType === 3 ? 0.17 : -0.02, 0.05);
