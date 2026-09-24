@@ -121,8 +121,8 @@ export function QuestionPhase({
   const lightChoiceStyles = [
     { box: "border-[#E87991] bg-[#FDE8ED]", badge: "bg-[#EF5B78] text-white" },
     { box: "border-[#68BBD5] bg-[#E5F4FA]", badge: "bg-[#3AA5C7] text-white" },
-    { box: "border-[#E7C94F] bg-[#FFF6CC]", badge: "bg-[#E2B900] text-[#18366B]" },
     { box: "border-[#83B96B] bg-[#E8F4E1]", badge: "bg-[#62A64C] text-white" },
+    { box: "border-[#A98BDD] bg-[#F0E9FA]", badge: "bg-[#8059C6] text-white" },
   ];
 
   return (

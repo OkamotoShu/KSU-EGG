@@ -40,7 +40,7 @@ export const EVENT_DEFINITIONS: Record<number, EventDefinition> = {
   2: {
     title: "この光を、たまごに届けてみよう！",
     content: "どんな色の光を届けようか？",
-    choices: ["あかい光", "あおい光", "きいろい光", "みどりの光"],
+    choices: ["あかい光", "あおい光", "みどりの光", "むらさきの光"],
     success: "たまごの色が変わったよ",
     character: 3,
     titleVisual: "allEggs",
