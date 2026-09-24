@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { doc, getDoc, updateDoc } from "firebase/firestore";
@@ -16,17 +17,11 @@ import {
   EggDisplay
 } from "@/components/event-phases";
 import { EventARPhase } from "@/components/event-ar-phase";
+import { CHARACTER_DETAILS, getEventDefinition, type EventCharacter } from "@/lib/event-data";
 
 type Phase = "title" | "question" | "confirm" | "arChoice" | "ar" | "success";
 
-type CharacterType = 1 | 2 | 3;
-
-function getEventCharacter(value: unknown, eventIndex: number): CharacterType {
-  if (value === 1 || value === "1" || value === "koyamachan") return 1;
-  if (value === 2 || value === "2" || value === "musubukun") return 2;
-  if (value === 3 || value === "3" || value === "yamachan") return 3;
-  return ((eventIndex % 3) + 1) as CharacterType;
-}
+type CharacterType = EventCharacter;
 
 function EventContent() {
   const searchParams = useSearchParams();
@@ -112,16 +107,14 @@ function EventContent() {
           : scannedQRs.reduce((sum, current) => sum + current, 0);
         setTotalScans(total);
 
-        const eventRef = doc(db, "event", total.toString());
-        const eventSnap = await getDoc(eventRef);
+        const eventData = getEventDefinition(total);
 
-        if (eventSnap.exists()) {
-          const eventData = eventSnap.data();
-          setEventTitle(eventData.title || "イベント発生！");
+        if (eventData) {
+          setEventTitle(eventData.title);
           setQuestion(eventData.content);
-          setChoices(eventData.select || []);
-          setSuccessMessage(eventData.success || "たまごの様子が変わった！");
-          setEventCharacter(getEventCharacter(eventData.character, total));
+          setChoices(eventData.choices);
+          setSuccessMessage(eventData.success);
+          setEventCharacter(eventData.character);
           if (isReplay) {
             setPhase("ar");
             return;
@@ -272,10 +265,65 @@ function EventContent() {
 
   const imageProps = {
     totalScans,
-    eventImageSrc: `/event_${totalScans}.png`,
+    eventImageSrc: getEventDefinition(totalScans)?.imageSrc || `/event_${totalScans}.png`,
     eggImagePath: `/egg_${userAnswers[0] || 0}_${userAnswers[2] || 0}.png`,
     patternImagePath: `/pattern_${userAnswers[3] || 0}.png`
   };
+  const titleVisual = getEventDefinition(totalScans)?.titleVisual;
+  const currentCharacter = CHARACTER_DETAILS[eventCharacter];
+
+  // 選択前に、参加者全員の現在のたまごをまとめて見せる
+  const allEggsPreview = (
+    <div className={`grid h-full w-full place-items-center gap-1 ${nicknames.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+      {nicknames.map((name) => {
+        const answers = eggDataMap[name] || [];
+        return (
+          <div key={name} className="aspect-square h-full max-h-[105px] min-h-0 w-full max-w-[105px]">
+            <EggDisplay
+              eggImagePath={`/egg_${answers[0] || 0}_${answers[2] || 0}.png`}
+              nestImagePath={answers[1] ? `/nest_${answers[1]}.png` : undefined}
+              patternImagePath={`/pattern_${answers[3] || 0}.png`}
+              showPattern={Boolean(answers[3])}
+              sizeClass="max-w-[105px]"
+            />
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // 通常イベントでは、担当キャラクターをたまごの横に表示する
+  const previewWithCharacter = (preview: React.ReactNode) => (
+    <div className="flex h-full w-full min-w-0 items-center justify-center gap-1">
+      <div className="flex h-full w-[29%] shrink-0 items-end justify-center">
+        <Image
+          src={currentCharacter.imageSrc}
+          alt={currentCharacter.name}
+          width={180}
+          height={180}
+          className="max-h-[82%] w-full object-contain"
+        />
+      </div>
+      <div className="h-full min-w-0 flex-1">
+        {preview}
+      </div>
+    </div>
+  );
+
+  const allCharactersPreview = (
+    <div className="flex h-16 items-end justify-center gap-2">
+      {([1, 2, 3] as CharacterType[]).map((character) => (
+        <Image
+          key={character}
+          src={CHARACTER_DETAILS[character].imageSrc}
+          alt={CHARACTER_DETAILS[character].name}
+          width={100}
+          height={100}
+          className="h-full w-16 object-contain"
+        />
+      ))}
+    </div>
+  );
 
   return (
     <div
@@ -287,10 +335,23 @@ function EventContent() {
       {phase === "title" && (
         <TitlePhase
           eventTitle={eventTitle}
+          speakerName={totalScans >= 1 && totalScans <= 3 ? currentCharacter.name : undefined}
           onNext={prepareARChoice}
         >
           <div className="mb-5 h-[min(28dvh,220px)]">
-            <EventImage {...imageProps} />
+            {totalScans >= 1 && totalScans <= 3 ? previewWithCharacter(
+              titleVisual === "allEggs" ? allEggsPreview : (
+                <EventImage
+                  {...imageProps}
+                  showEggOnly={titleVisual === "egg"}
+                />
+              )
+            ) : titleVisual === "allEggs" ? allEggsPreview : (
+              <EventImage
+                {...imageProps}
+                showEggOnly={titleVisual === "egg"}
+              />
+            )}
           </div>
         </TitlePhase>
       )}
@@ -301,6 +362,8 @@ function EventContent() {
           nicknames={nicknames}
           currentPlayerIndex={currentPlayerIndex}
           question={question}
+          speakerName={totalScans >= 1 && totalScans <= 3 ? currentCharacter.name : undefined}
+          useChoiceColors={totalScans === 2}
           choices={choices}
           selectedAnswer={tempAnswers[currentName]}
           isEditing={isEditing}
@@ -309,7 +372,26 @@ function EventContent() {
           onPrevious={handlePrevious}
           onNext={handleNextPlayer}
         >
-          <EventImage {...imageProps} />
+          {totalScans >= 1 && totalScans <= 3 ? previewWithCharacter(
+            totalScans === 2 || totalScans === 3 ? (
+            <div
+              className="relative h-full w-full"
+              style={{ containerType: "size" }}
+            >
+              {/* p02・p03では、表示範囲の短い辺に合わせて現在のたまごを表示する */}
+              <div className="absolute top-1/2 left-1/2 aspect-square -translate-x-1/2 -translate-y-1/2 [width:min(92cqw,92cqh)]">
+                <EggDisplay
+                  eggImagePath={`/egg_${userAnswers[0] || 0}_${userAnswers[2] || 0}.png`}
+                  nestImagePath={userAnswers[1] ? `/nest_${userAnswers[1]}.png` : undefined}
+                  patternImagePath={`/pattern_${userAnswers[3] || 0}.png`}
+                  showPattern={Boolean(userAnswers[3])}
+                  sizeClass="max-w-none"
+                />
+              </div>
+            </div>
+          ) : (
+            <EventImage {...imageProps} />
+          )) : <EventImage {...imageProps} />}
         </QuestionPhase>
       )}
 
@@ -326,13 +408,30 @@ function EventContent() {
 
       {phase === "arChoice" && (
         <div className="mx-auto flex w-full max-w-sm flex-col rounded-3xl border border-[#18366B]/10 bg-white p-6 text-center shadow-sm">
+          {totalScans === 4 && (
+            <div className="mb-4">
+              {allCharactersPreview}
+              <div className="mt-2 h-32">
+                {allEggsPreview}
+              </div>
+            </div>
+          )}
           <p className="text-xs font-extrabold tracking-[0.16em] text-[#A96500]">EVENT AR</p>
-          <h2 className="mt-2 text-2xl font-extrabold">ARで遊んでみる？</h2>
-          <p className="mt-3 text-sm leading-7 text-[#65748B]">
-            {totalScans === 4
-              ? "三人のキャラクターと一緒に、たまごを目覚めさせよう。"
-              : "カードを一度読み取ると、みんなのたまごが一緒に現れるよ。"}
-          </p>
+          {totalScans === 4 ? (
+            <div className="relative mt-5 rounded-2xl border-2 border-[#E2A72F]/25 bg-[#FFF0C2] px-4 pt-5 pb-3 text-left">
+              <span className="absolute -top-3 left-4 rounded-full bg-[#FFBC39] px-3 py-1 text-xs font-extrabold text-[#18366B]">
+                みんな
+              </span>
+              <p className="font-extrabold leading-relaxed">「いっしょに、たまごを目覚めさせよう！」</p>
+            </div>
+          ) : (
+            <>
+              <h2 className="mt-2 text-2xl font-extrabold">ARで遊んでみる？</h2>
+              <p className="mt-3 text-sm leading-7 text-[#65748B]">
+                カードを一度読み取ると、みんなのたまごが一緒に現れるよ。
+              </p>
+            </>
+          )}
           <button
             type="button"
             onClick={() => setPhase("ar")}
@@ -359,13 +458,11 @@ function EventContent() {
               ? savedAnswers.map((value, index) => index <= totalScans ? value : 0)
               : savedAnswers;
             const previousAnswers = previousEggDataMap[name] || [];
-            const arBeforeColor = totalScans === 2
-              ? answers[2]
-              : previousAnswers[2];
             return {
               name,
               before: {
-                egg: `/egg_${previousAnswers[0] || 0}_${arBeforeColor || 0}.png`,
+                // AR開始時はホームと同じ、イベント前のたまごを表示する
+                egg: `/egg_${previousAnswers[0] || 0}_${previousAnswers[2] || 0}.png`,
                 nest: previousAnswers[1] ? `/nest_${previousAnswers[1]}.png` : null,
                 pattern: previousAnswers[3] ? `/pattern_${previousAnswers[3]}.png` : null,
               },

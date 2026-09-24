@@ -8,12 +8,27 @@ export function EventImage({
   eggImagePath,
   patternImagePath,
   eventImageSrc,
+  showEggOnly = false,
 }: {
   totalScans: number;
   eggImagePath: string;
   patternImagePath: string;
   eventImageSrc: string;
+  showEggOnly?: boolean;
 }) {
+  // 設定に応じて、イベント画像を使わず現在のたまごを表示する
+  if (showEggOnly) {
+    return (
+      <div className="relative mx-auto flex h-full w-full max-w-[240px] min-h-0 items-center justify-center">
+        <img
+          src={eggImagePath}
+          alt="現在のたまご"
+          className="h-[92%] w-[92%] object-contain drop-shadow-md"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="relative mx-auto flex h-full w-full max-w-[240px] min-h-0 justify-center">
       {totalScans === 3 && (
@@ -33,19 +48,33 @@ export function EventImage({
 // ② タイトル画面コンポーネント
 export function TitlePhase({
   eventTitle,
+  speakerName,
   onNext,
   children,
 }: {
   eventTitle: string;
+  speakerName?: string;
   onNext: () => void;
   children: React.ReactNode;
 }) {
   return (
     <div className="text-center animate-in fade-in duration-300">
       {children}
-      <h1 className="mb-8 text-2xl font-bold text-gray-800 leading-relaxed">
-        {eventTitle}
-      </h1>
+      {speakerName ? (
+        <div className="relative mb-8 rounded-3xl border-2 border-[#18366B]/10 bg-white px-5 py-4 text-left shadow-sm">
+          <span className="absolute -top-3 left-5 rounded-full bg-[#18366B] px-3 py-1 text-xs font-extrabold text-white">
+            {speakerName}
+          </span>
+          {/* <span aria-hidden="true" className="absolute -top-2 left-10 h-4 w-4 rotate-45 border-t-2 border-l-2 border-[#18366B]/10 bg-white" /> */}
+          <h1 className="mt-1 text-xl leading-relaxed font-extrabold text-[#18366B]">
+            「{eventTitle}」
+          </h1>
+        </div>
+      ) : (
+        <h1 className="mb-8 text-2xl leading-relaxed font-bold text-gray-800">
+          {eventTitle}
+        </h1>
+      )}
       <button
         onClick={onNext}
         className="w-full rounded-xl bg-[#FFBC39] px-4 py-4 font-bold text-white transition-colors hover:bg-blue-700 active:scale-95 shadow-md"
@@ -62,6 +91,8 @@ export function QuestionPhase({
   nicknames,
   currentPlayerIndex,
   question,
+  speakerName,
+  useChoiceColors = false,
   choices,
   selectedAnswer,
   isEditing,
@@ -74,6 +105,8 @@ export function QuestionPhase({
   nicknames: string[];
   currentPlayerIndex: number;
   question: string;
+  speakerName?: string;
+  useChoiceColors?: boolean;
   choices: string[];
   selectedAnswer?: number;
   isEditing: boolean;
@@ -85,6 +118,12 @@ export function QuestionPhase({
 }) {
   const currentName = nicknames[currentPlayerIndex];
   const isLastPlayer = currentPlayerIndex === nicknames.length - 1;
+  const lightChoiceStyles = [
+    { box: "border-[#E87991] bg-[#FDE8ED]", badge: "bg-[#EF5B78] text-white" },
+    { box: "border-[#68BBD5] bg-[#E5F4FA]", badge: "bg-[#3AA5C7] text-white" },
+    { box: "border-[#E7C94F] bg-[#FFF6CC]", badge: "bg-[#E2B900] text-[#18366B]" },
+    { box: "border-[#83B96B] bg-[#E8F4E1]", badge: "bg-[#62A64C] text-white" },
+  ];
 
   return (
     <div className="flex h-full min-h-0 flex-col gap-3 text-[#18366B]">
@@ -116,19 +155,27 @@ export function QuestionPhase({
         disabled={isUpdating}
         className="min-w-0 shrink-0"
       >
-        <legend className="mb-3 w-full rounded-2xl bg-[#FFF0C2] px-4 py-3 text-base leading-snug font-extrabold">
-          {question}
+        <legend className="relative mb-3 w-full rounded-2xl border-2 border-[#E2A72F]/25 bg-[#FFF0C2] px-4 pt-5 pb-3 text-left text-base leading-snug font-extrabold">
+          {speakerName && (
+            <span className="absolute -top-3 left-4 rounded-full bg-[#FFBC39] px-3 py-1 text-xs font-extrabold text-[#18366B]">
+              {speakerName}
+            </span>
+          )}
+          {speakerName ? `「${question}」` : question}
         </legend>
 
         <div className="flex flex-col gap-2">
           {choices.map((choiceText, index) => {
             const selected = selectedAnswer === index + 1;
+            const selectedStyle = useChoiceColors
+              ? lightChoiceStyles[index] || lightChoiceStyles[0]
+              : { box: "border-[#269D9C] bg-[#E4F2EE]", badge: "bg-[#18366B] text-white" };
 
             return (
               <label
                 key={index}
                 className={`relative flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border-2 px-3 py-2.5 transition-colors ${selected
-                    ? "border-[#269D9C] bg-[#E4F2EE]"
+                    ? selectedStyle.box
                     : "border-[#18366B]/10 bg-white"
                   }`}
               >
@@ -150,7 +197,7 @@ export function QuestionPhase({
                 <span
                   aria-hidden="true"
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${selected
-                      ? "bg-[#18366B] text-white"
+                      ? selectedStyle.badge
                       : "bg-[#FFF0C2]"
                     }`}
                 >

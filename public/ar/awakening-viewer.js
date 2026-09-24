@@ -196,7 +196,7 @@ async function start() {
       sounds.push(createSoundEffects(index + 1));
     }
 
-    // こやまちゃんは星、むすぶくんはハート、やまちゃんは魔法の渦を出す
+    // ほしみ〜るちゃんは星、むすぶくんはハート、やまくんは魔法の渦を出す
     const starShape = new THREE.Shape();
     for (let index = 0; index < 10; index++) {
       const angle = Math.PI / 2 + index * Math.PI / 5;

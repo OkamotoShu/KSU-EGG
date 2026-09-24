@@ -298,6 +298,13 @@ async function start() {
         character.rotation.z = Math.sin(progress * Math.PI * 2) * 0.04;
         if (progress >= 1) {
           const { group, egg, player } = approaching;
+          const selectedColor = Number(player.after.egg.match(/_([1-4])\.png$/)?.[1]) || 4;
+          const lightColors = {
+            1: 0xff6f91,
+            2: 0x55c8f2,
+            3: 0xffdf55,
+            4: 0x55d98b,
+          };
           group.attach(character);
           character.position.set(characterType === 2 ? 0.78 : -0.78, characterType === 3 ? 0.17 : -0.02, 0.05);
           character.rotation.z = 0;
@@ -307,6 +314,7 @@ async function start() {
             characterType,
             character,
             egg,
+            effectColor: lightColors[selectedColor],
             existingMarks: player.marks,
             showPersistentMarks: false,
             settleAsHat: false,

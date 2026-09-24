@@ -1,5 +1,5 @@
 // キャラクターごとに異なる、たまごとの触れ合いを再生する
-export function createCharacterAction({ THREE, anchor, characterType, character, egg, reducedMotion = false, existingMarks = [], existingMark = false, showPersistentMarks = true, settleAsHat = true, onMarkEarned = () => {} }) {
+export function createCharacterAction({ THREE, anchor, characterType, character, egg, effectColor = 0x4de4a0, reducedMotion = false, existingMarks = [], existingMark = false, showPersistentMarks = true, settleAsHat = true, onMarkEarned = () => {} }) {
   const duration = 1800;
   const base = { characterX: character.position.x, characterY: character.position.y, characterZ: character.position.z, characterScale: character.scale.x, eggX: egg.position.x, eggY: egg.position.y, eggZ: egg.position.z, eggScale: egg.scale.x };
   let startedAt = null;
@@ -25,16 +25,17 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
     return mesh;
   });
 
-  // やまちゃん用の魔法陣と光の粒
+  // やまくん用の魔法陣と光の粒
   const ringGeometry = new THREE.RingGeometry(0.42, 0.46, 48);
-  const ringMaterial = new THREE.MeshBasicMaterial({ color: 0x4de4a0, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+  const ringMaterial = new THREE.MeshBasicMaterial({ color: effectColor, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
   const magicRing = new THREE.Mesh(ringGeometry, ringMaterial);
   magicRing.position.z = 0.08;
   magicRing.visible = false;
   anchor.group.add(magicRing);
   const orbGeometry = new THREE.CircleGeometry(0.035, 16);
+  const effectLightColor = new THREE.Color(effectColor).lerp(new THREE.Color(0xffffff), 0.38);
   const orbs = Array.from({ length: 10 }, (_, index) => {
-    const material = new THREE.MeshBasicMaterial({ color: index % 2 ? 0xffef78 : 0x5fffc1, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
+    const material = new THREE.MeshBasicMaterial({ color: index % 2 ? effectLightColor : effectColor, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide });
     const mesh = new THREE.Mesh(orbGeometry, material);
     mesh.visible = false;
     mesh.position.z = 0.1;
@@ -173,7 +174,7 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
       }
       const pulse = Math.sin(progress * Math.PI);
       if (characterType === 1) {
-        // こやまちゃん：たまごの周囲を大きく一周する
+        // ほしみ〜るちゃん：たまごの周囲を大きく一周する
         const orbitProgress = Math.min(1, progress / 0.82);
         const angle = Math.PI + orbitProgress * Math.PI * 2;
         const returnEase = smooth(Math.max(0, (progress - 0.82) / 0.18));
@@ -207,7 +208,7 @@ export function createCharacterAction({ THREE, anchor, characterType, character,
           heart.material.opacity = Math.max(0, Math.sin(local * Math.PI));
         });
       } else {
-        // やまちゃん：魔法陣を展開し、帽子としてたまごに着地する
+        // やまくん：魔法陣を展開し、帽子としてたまごに着地する
         const cast = smooth(Math.min(1, progress / 0.32));
         const land = smooth(Math.min(1, Math.max(0, (progress - 0.28) / 0.36)));
         if (wearingHat) {
