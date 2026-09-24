@@ -93,6 +93,7 @@ export function QuestionPhase({
   question,
   speakerName,
   useChoiceColors = false,
+  choiceImageGroups,
   choices,
   selectedAnswer,
   isEditing,
@@ -107,6 +108,7 @@ export function QuestionPhase({
   question: string;
   speakerName?: string;
   useChoiceColors?: boolean;
+  choiceImageGroups?: string[][];
   choices: string[];
   selectedAnswer?: number;
   isEditing: boolean;
@@ -175,8 +177,8 @@ export function QuestionPhase({
               <label
                 key={index}
                 className={`relative flex min-h-12 cursor-pointer items-center gap-3 rounded-2xl border-2 px-3 py-2.5 transition-colors ${selected
-                    ? selectedStyle.box
-                    : "border-[#18366B]/10 bg-white"
+                  ? selectedStyle.box
+                  : "border-[#18366B]/10 bg-white"
                   }`}
               >
                 <input
@@ -197,8 +199,8 @@ export function QuestionPhase({
                 <span
                   aria-hidden="true"
                   className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${selected
-                      ? selectedStyle.badge
-                      : "bg-[#FFF0C2]"
+                    ? selectedStyle.badge
+                    : "bg-[#FFF0C2]"
                     }`}
                 >
                   {String.fromCharCode(65 + index)}
@@ -207,6 +209,26 @@ export function QuestionPhase({
                 <span className="flex-1 text-sm leading-snug font-bold">
                   {choiceText}
                 </span>
+
+                {choiceImageGroups?.[index] && (
+                  <span
+                    aria-hidden="true"
+                    className="flex h-12 w-[88px] shrink-0 items-center justify-end"
+                  >
+                    {choiceImageGroups[index].map((imageSrc, imageIndex) => (
+                      <span
+                        key={imageSrc}
+                        className={`relative h-8 w-12 shrink-0 overflow-hidden ${imageIndex > 0 ? "-ml-2" : ""}`}
+                      >
+                        <img
+                          src={imageSrc}
+                          alt=""
+                          className="absolute top-0 left-1/2 h-12 w-12 max-w-none -translate-x-1/2 object-contain object-top drop-shadow-[0_0_1px_#111] drop-shadow-[0_0_1px_#111]"
+                        />
+                      </span>
+                    ))}
+                  </span>
+                )}
 
                 <span
                   aria-hidden="true"

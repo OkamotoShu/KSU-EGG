@@ -370,6 +370,9 @@ function EventContent() {
           question={question}
           speakerName={totalScans >= 1 && totalScans <= 3 ? currentCharacter.name : undefined}
           useChoiceColors={totalScans === 2}
+          choiceImageGroups={totalScans === 0
+            ? [1, 2].map((type) => [1, 2, 3].map((variant) => `/choicesImg/monster_${type}_${variant}.png`))
+            : undefined}
           choices={choices}
           selectedAnswer={tempAnswers[currentName]}
           isEditing={isEditing}
