@@ -21,7 +21,7 @@ export const EVENT_DEFINITIONS: Record<number, EventDefinition> = {
   0: {
     title: "博士からたまごをもらおう",
     content: "キミはどんないきものが好きかな？",
-    choices: ["カワイイいきもの", "かっこいい"],
+    choices: ["ふしぎないきもの", "かわいいいきもの"],
     success: "博士からたまごをもらったよ",
     character: 1,
     imageSrc: "/event_0.png",
@@ -30,7 +30,7 @@ export const EVENT_DEFINITIONS: Record<number, EventDefinition> = {
   1: {
     title: "たまごがころがりそう！いっしょにベッドを作ろう！",
     content: "どの素材なら、たまごが安心できるかな？",
-    choices: ["きのえだ", "ほね", "くも"],
+    choices: ["きのえだ", "サンゴ", "くも"],
     success: "ベッドが完成してたまごが安定したよ",
     character: 2,
     imageSrc: "/event_1.png",
