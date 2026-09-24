@@ -13,6 +13,7 @@ import {
 
 interface TutorialModalProps {
   onClose: () => void;
+  fromAbout?: boolean;
 }
 
 const steps = [
@@ -23,23 +24,30 @@ const steps = [
   },
   {
     title: "こたえを選ぼう！",
-    description: "QRを読み取ったら質問に答えてね。選んだこたえで、たまごが変わるよ。",
+    description: "QRを読み取ったら質問に答えてね。選んだこたえで、たまごが変化するよ。",
     background: "#FFF0C2",
   },
   {
     title: "どんな子がうまれるかな？",
-    description: "すべてのQRを見つけて、たまごをふかさせよう！",
+    description: "ゴール地点へ行き、たまごをふかさせよう！",
     background: "#EDE4FF",
+  },
+  {
+    title: "まずは博士に会おう！",
+    description: "QRを読み込むと博士からたまごがもらえるよ。",
+    background: "#FCE4EC", // 好きな背景色を指定（例：薄いピンク）
   },
 ];
 
-export function TutorialModal({ onClose }: TutorialModalProps) {
+export function TutorialModal({ onClose, fromAbout = false }: TutorialModalProps) {
   const [step, setStep] = useState(0);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const navigationLockRef = useRef(0);
 
-  const currentStep = steps[step];
-  const isLastStep = step === steps.length - 1;
+  const activeSteps = fromAbout ? steps.slice(0, 3) : steps;
+
+  const currentStep = activeSteps[step];
+  const isLastStep = step === activeSteps.length - 1;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -96,7 +104,7 @@ export function TutorialModal({ onClose }: TutorialModalProps) {
         </h2>
 
         <span className="rounded-full bg-white px-3 py-1 text-xs font-bold">
-          {step + 1} / {steps.length}
+          {step + 1} / {activeSteps.length}
         </span>
       </div>
 
@@ -234,27 +242,34 @@ export function TutorialModal({ onClose }: TutorialModalProps) {
               <Sparkles className="absolute bottom-[20%] left-[16%] h-6 w-6 text-[#A96500]" />
             </>
           )}
+
+          {step === 3 && (
+            <div className="flex h-full w-full items-center justify-center px-4 text-center">
+              
+              {/* ここに4ページ目のイラストやアイコンを作ります */}
+              <div className="relative h-36 w-36 drop-shadow-sm">
+                  <Image
+                    src="/event_0.png"
+                    alt="たまご博士"
+                    fill
+                    className="object-contain"
+                  />
+              </div>
+
+            </div>
+          )}
         </div>
       </div>
 
       {/* 短い説明文 */}
-      <div
-        aria-live="polite"
-        aria-atomic="true"
-        className="py-4 text-center"
-      >
-        <h3 className="text-xl leading-snug font-extrabold">
-          {currentStep.title}
-        </h3>
-
-        <p className="mt-2 text-sm leading-relaxed">
-          {currentStep.description}
-        </p>
+      <div aria-live="polite" aria-atomic="true" className="py-4 text-center">
+        <h3 className="text-xl leading-snug font-extrabold">{currentStep.title}</h3>
+        <p className="mt-2 text-sm leading-relaxed">{currentStep.description}</p>
       </div>
 
       {/* 現在のステップ */}
       <div aria-hidden="true" className="mb-4 flex justify-center gap-2">
-        {steps.map((_, index) => (
+        {activeSteps.map((_, index) => (
           <span
             key={index}
             className={`h-2 rounded-full transition-all motion-reduce:transition-none ${index === step

@@ -182,7 +182,10 @@ export default function AboutPage() {
 
             {/* ホームの初回表示記録は変更しない */}
             {showTutorial && (
-                <TutorialModal onClose={() => setShowTutorial(false)} />
+                <TutorialModal 
+                    fromAbout={true} 
+                    onClose={() => setShowTutorial(false)} 
+                />
             )}
         </>
     );

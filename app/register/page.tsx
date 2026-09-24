@@ -49,6 +49,8 @@ function RegisterContent() {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (isLoading) return; // 連打防止
+
     if (nicknames.some((name) => !name.trim())) {
       alert("すべてのニックネームを入力してください。");
       return;

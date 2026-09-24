@@ -11,6 +11,7 @@ import { Footer } from "@/components/footer";
 import { EggDisplay } from "@/components/egg_display";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { TutorialModal } from "@/components/tutorial_modal";
+import Link from "next/link";
 
 export default function Home() {
   const router = useRouter();
@@ -332,14 +333,12 @@ export default function Home() {
         {/* ▼▼▼ 追加：孵化済みの時だけアンケートボタンを表示 ▼▼▼ */}
         {isHatched && (
           <div className="mt-2 flex w-full shrink-0 justify-center">
-            <a
-              href="https://forms.google.com/..." /* ←★ここにアンケートのURLを入れます */
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              href="/form"
               className="flex min-h-12 w-full max-w-sm items-center justify-center rounded-full bg-[#269D9C] px-6 text-sm font-bold text-white shadow-sm transition hover:bg-[#1E7D7C] active:scale-95"
             >
               アンケートがまだの方はこちら
-            </a>
+            </Link>
           </div>
         )}
         {/* ▲▲▲ ここまで ▲▲▲ */}

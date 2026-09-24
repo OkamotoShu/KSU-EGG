@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDocFromServer } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 // import { hasAcceptedConsent } from "@/lib/consent"; ← 不要になるので削除！
 
@@ -32,9 +32,7 @@ export function EntryGuard({ page, children }: EntryGuardProps) {
 
                     if (user) {
                         // 通信エラーを未登録として扱わない
-                        const snapshot = await getDocFromServer(
-                            doc(db, "users", user.uid)
-                        );
+                        const snapshot = await getDoc(doc(db, "users", user.uid));
                         isRegistered = snapshot.exists();
                     }
 

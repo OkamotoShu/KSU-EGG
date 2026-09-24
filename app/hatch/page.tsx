@@ -9,6 +9,7 @@ import { auth, db } from "@/lib/firebase";
 import { Header } from "@/components/header";
 import { EggDisplay } from "@/components/egg_display";
 import { EventARPhase } from "@/components/event-ar-phase";
+import Link from "next/link";
 
 export default function HatchPage() {
   const router = useRouter();
@@ -183,12 +184,12 @@ export default function HatchPage() {
           {/* ▲▲▲ ここまで ▲▲▲ */}
 
           {/* アンケートボタンを目立たせるため、ホームへ戻るボタンは少し控えめな色に変更 */}
-          <button 
-            onClick={() => router.push("/")} 
-            className="mt-4 min-h-14 w-full rounded-2xl bg-[#E5E7EB] px-4 font-bold text-[#65748B] transition active:scale-95"
+          <Link 
+            href="/" 
+            className="mt-4 flex min-h-14 w-full items-center justify-center rounded-2xl bg-[#E5E7EB] px-4 font-bold text-[#65748B] transition active:scale-95"
           >
             ホームへ戻る
-          </button>
+          </Link>
         </div>
       </main>
     </>
