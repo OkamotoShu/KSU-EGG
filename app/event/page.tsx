@@ -307,6 +307,7 @@ function EventContent() {
           alt={currentCharacter.name}
           width={180}
           height={180}
+          unoptimized
           className="max-h-[82%] w-full object-contain"
         />
       </div>
@@ -325,6 +326,7 @@ function EventContent() {
           alt={CHARACTER_DETAILS[character].name}
           width={100}
           height={100}
+          unoptimized
           className="h-full w-16 object-contain"
         />
       ))}
