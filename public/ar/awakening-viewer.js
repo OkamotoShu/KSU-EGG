@@ -328,42 +328,44 @@ async function start() {
         const pulse = Math.sin(progress * Math.PI);
         if (activeCharacter === 0) {
           const angle = Math.PI + progress * Math.PI * 2;
-          character.position.x = Math.cos(angle) * 0.72;
-          character.position.y = Math.sin(angle) * 0.48;
-          character.rotation.z = -Math.cos(angle) * 0.16;
+          character.position.x = Math.cos(angle) * 0.92;
+          character.position.y = Math.sin(angle) * 0.6;
+          character.rotation.z = -Math.cos(angle) * 0.24;
         } else if (activeCharacter === 1) {
           character.position.x = THREE.MathUtils.lerp(base.x, 0.48, pulse);
-          character.position.y = base.y + pulse * 0.12;
-          character.scale.setScalar(1 + pulse * 0.28);
+          character.position.y = base.y + pulse * 0.2;
+          character.scale.setScalar(1 + pulse * 0.45);
         } else {
-          character.position.y = base.y + pulse * 0.18;
-          character.rotation.z = Math.sin(progress * Math.PI * 6) * 0.08;
+          character.position.y = base.y + pulse * 0.3;
+          character.rotation.z = Math.sin(progress * Math.PI * 7) * 0.13;
         }
         if (activeCharacter === 0) {
           stars.forEach((star, index) => {
             const angle = progress * Math.PI * 4 + index * Math.PI * 2 / stars.length;
-            const radius = 0.2 + progress * 0.5;
+            const radius = 0.22 + progress * 0.72;
             star.visible = true;
             star.position.set(Math.cos(angle) * radius, Math.sin(angle) * radius * 0.7, 0.1);
             star.rotation.z = angle;
-            star.material.opacity = pulse * 0.9;
+            star.scale.setScalar(0.9 + pulse * 0.75);
+            star.material.opacity = pulse;
           });
         } else if (activeCharacter === 1) {
           hearts.forEach((heart, index) => {
             heart.visible = true;
-            heart.position.set(-0.42 + index * 0.095 + Math.sin(index + progress * 8) * 0.025, -0.18 + progress * 0.7 + (index % 2) * 0.08, 0.1);
-            heart.scale.setScalar(0.65 + pulse * 0.5);
+            heart.position.set(-0.5 + index * 0.11 + Math.sin(index + progress * 8) * 0.04, -0.22 + progress * 0.95 + (index % 2) * 0.1, 0.1);
+            heart.scale.setScalar(0.78 + pulse * 0.72);
             heart.material.opacity = pulse * 0.9;
           });
         } else {
           magicRing.visible = true;
           magicRing.rotation.z = progress * Math.PI * 4;
-          magicRing.scale.setScalar(0.7 + pulse * 1.1);
-          magicRing.material.opacity = pulse * 0.8;
+          magicRing.scale.setScalar(0.62 + pulse * 1.65);
+          magicRing.material.opacity = pulse;
           magicOrbs.forEach((orb, index) => {
             const angle = progress * Math.PI * 5 + index * Math.PI * 2 / magicOrbs.length;
             orb.visible = true;
-            orb.position.set(Math.cos(angle) * (0.25 + pulse * 0.35), Math.sin(angle) * (0.2 + pulse * 0.28), 0.11);
+            orb.position.set(Math.cos(angle) * (0.28 + pulse * 0.52), Math.sin(angle) * (0.22 + pulse * 0.44), 0.11);
+            orb.scale.setScalar(0.9 + pulse * 0.65);
             orb.material.opacity = pulse;
           });
         }
@@ -397,12 +399,12 @@ async function start() {
           sounds[0].playCrack();
           navigator.vibrate?.([70, 35, 110]);
         }
-        const pulse = Math.sin(progress * Math.PI * 8) * (1 - progress);
+        const pulse = Math.sin(progress * Math.PI * 10) * (1 - progress);
         eggs.forEach((egg, index) => {
-          egg.rotation.z = pulse * 0.12;
-          egg.scale.setScalar((players[index].nest ? 0.78 : 1) * (1 + Math.sin(progress * Math.PI) * 0.08));
-          glows[index].material.opacity = Math.sin(progress * Math.PI) * 0.72;
-          glows[index].scale.setScalar(0.8 + progress * 0.7);
+          egg.rotation.z = pulse * 0.2;
+          egg.scale.setScalar((players[index].nest ? 0.78 : 1) * (1 + Math.sin(progress * Math.PI) * 0.14));
+          glows[index].material.opacity = Math.sin(progress * Math.PI) * 0.96;
+          glows[index].scale.setScalar(0.72 + progress * 1.08);
           if (progress > 0.48) {
             cracks[index].visible = true;
             cracks[index].material.opacity = Math.min(1, (progress - 0.48) * 3.2);

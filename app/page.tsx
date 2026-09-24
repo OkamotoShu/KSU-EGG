@@ -285,27 +285,59 @@ export default function Home() {
           style={{ containerType: "size" }}
         >
           <div className="absolute inset-0 flex items-center justify-center">
-            <div
-              className="relative aspect-square"
-              style={{
-                width: "min(100cqw, 100cqh, 480px)",
-              }}
-            >
-              <div
-                aria-hidden="true"
-                className="absolute inset-x-0 top-[8%] bottom-[3%] rounded-[46%_54%_49%_51%/53%_45%_55%_47%] bg-[#FFF0C2]"
-              />
+            {totalEventScans === 0 ? (
+              <section className="w-full max-w-sm rounded-3xl border border-[#18366B]/10 bg-white p-6 text-center shadow-[0_10px_30px_rgba(24,54,107,0.08)]">
+                <p className="text-xs font-extrabold tracking-[0.16em] text-[#A96500]">
+                  FIRST MISSION
+                </p>
+                <h2 className="mt-2 text-2xl leading-relaxed font-extrabold text-[#18366B]">
+                  スタッフに声をかけて、たまごを受け取ろう！
+                </h2>
+                <div aria-hidden="true" className="relative mx-auto mt-5 h-32 w-full max-w-[280px] overflow-hidden">
+                  {/* 花かごの持ち手 */}
+                  <div className="absolute bottom-5 left-1/2 h-24 w-44 -translate-x-1/2 rounded-t-[50%] border-[7px] border-b-0 border-[#A66D36] bg-transparent" />
 
-              <div className="absolute inset-0">
-                <EggDisplay
-                  eggSrc={eggSrc}
-                  nestSrc={nestSrc}
-                  patternSrc={patternSrc}
-                  auraSrc={auraSrc}
-                  crackSrc={!isHatched && totalEventScans >= 5 ? "/crack.png" : undefined}
+                  {/* かごの縁に咲く小さな花 */}
+                  <span className="absolute bottom-12 left-[8%] z-30 -rotate-12 text-3xl leading-none text-[#EF6B82]">✿</span>
+                  <span className="absolute bottom-16 left-[20%] z-30 rotate-12 text-2xl leading-none text-[#F6AB00]">✿</span>
+                  <span className="absolute right-[19%] bottom-[60px] z-30 -rotate-6 text-2xl leading-none text-[#23B4BA]">✿</span>
+                  <span className="absolute right-[7%] bottom-11 z-30 rotate-12 text-3xl leading-none text-[#A98BDD]">✿</span>
+
+                  {/* 色と向きの異なるたまごを花かごの中へ散らす */}
+                  <span className="absolute bottom-10 left-[15%] z-10 h-16 w-11 -rotate-[22deg] rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 border-[#DCA5B6] bg-[#F8D5DF] shadow-sm" />
+                  <span className="absolute bottom-14 left-[31%] z-10 h-[72px] w-12 rotate-[10deg] rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 border-[#9FC8D5] bg-[#D4EDF3] shadow-sm" />
+                  <span className="absolute bottom-8 left-1/2 z-10 h-[76px] w-[52px] -translate-x-1/2 -rotate-3 rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 border-[#E2A72F] bg-[#FFF0C2] shadow-sm" />
+                  <span className="absolute right-[29%] bottom-[52px] z-10 h-[68px] w-12 -rotate-[12deg] rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 border-[#83B96B] bg-[#D9EBCF] shadow-sm" />
+                  <span className="absolute right-[13%] bottom-9 z-10 h-16 w-11 rotate-[24deg] rounded-[50%_50%_46%_46%/60%_60%_40%_40%] border-2 border-[#A98BDD] bg-[#E9DDF8] shadow-sm" />
+
+                  {/* 編み目のある花かご本体 */}
+                  <div className="absolute inset-x-4 bottom-0 z-20 h-14 rounded-[18%_18%_42%_42%/18%_18%_72%_72%] border-[3px] border-[#8E572D] bg-[repeating-linear-gradient(8deg,transparent_0px,transparent_7px,rgba(126,72,31,.34)_8px,transparent_10px),repeating-linear-gradient(98deg,#E5B675_0px,#E5B675_12px,#C98B4D_13px,#DDA565_20px)] shadow-[inset_0_5px_8px_rgba(92,53,24,0.16),0_4px_0_rgba(142,87,45,.18)]" />
+                  <div className="absolute inset-x-3 bottom-11 z-30 h-4 rounded-full border-[3px] border-[#8E572D] bg-[#DFA96A]" />
+                </div>
+              </section>
+            ) : (
+              <div
+                className="relative aspect-square"
+                style={{
+                  width: "min(100cqw, 100cqh, 480px)",
+                }}
+              >
+                <div
+                  aria-hidden="true"
+                  className="absolute inset-x-0 top-[8%] bottom-[3%] rounded-[46%_54%_49%_51%/53%_45%_55%_47%] bg-[#FFF0C2]"
                 />
+
+                <div className="absolute inset-0">
+                  <EggDisplay
+                    eggSrc={eggSrc}
+                    nestSrc={nestSrc}
+                    patternSrc={patternSrc}
+                    auraSrc={auraSrc}
+                    crackSrc={!isHatched && totalEventScans >= 5 ? "/crack.png" : undefined}
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
