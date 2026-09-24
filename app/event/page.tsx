@@ -18,6 +18,7 @@ import {
 } from "@/components/event-phases";
 import { EventARPhase } from "@/components/event-ar-phase";
 import { CHARACTER_DETAILS, getEventDefinition, type EventCharacter } from "@/lib/event-data";
+import { postCollectionInLogs } from "@/lib/dbActions";
 
 type Phase = "title" | "question" | "confirm" | "arChoice" | "ar" | "success";
 
@@ -244,6 +245,11 @@ function EventContent() {
         nickName: updatedNickName,
         scannedQRs: newScannedQRs,
       });
+      await postCollectionInLogs(
+        "イベント完了",
+        `イベント_${totalScans + 1}回目`,
+        `成功 (QR:${qrIdParam})`
+      );
       setARMarks(updatedMarks);
       setEggDataMap(updatedNickName);
       setTotalScans((previous) => previous + 1);

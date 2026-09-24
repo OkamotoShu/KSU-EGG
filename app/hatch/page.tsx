@@ -10,6 +10,7 @@ import { Header } from "@/components/header";
 import { EggDisplay } from "@/components/egg_display";
 import { EventARPhase } from "@/components/event-ar-phase";
 import Link from "next/link";
+import { postCollectionInLogs } from "@/lib/dbActions";
 
 export default function HatchPage() {
   const router = useRouter();
@@ -77,6 +78,11 @@ export default function HatchPage() {
       const scannedQRs = [...(snapshot.data().scannedQRs || [0, 0, 0, 0, 0, 0])];
       scannedQRs[5] = 1;
       await updateDoc(userRef, { scannedQRs });
+      await postCollectionInLogs(
+        "イベント完了",
+        "孵化イベント",
+        "成功 (QR:5)"
+      );
       setIsFinished(true);
     } catch (error) {
       console.error("孵化結果の保存に失敗しました:", error);
