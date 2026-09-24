@@ -90,6 +90,7 @@ async function start() {
     const hatched = new Set();
     let activeIndex = null;
     let activeStartedAt = null;
+    let crackSoundPlayed = false;
 
     for (let index = 0; index < players.length; index++) {
       const player = players[index];
@@ -203,6 +204,8 @@ async function start() {
       activeIndex = index;
       activeStartedAt = performance.now();
       sound.play();
+      crackSoundPlayed = false;
+      navigator.vibrate?.(tapCounts[index] === 1 ? 30 : tapCounts[index] === 2 ? [40, 20, 40] : 50);
     };
     container.addEventListener("pointerdown", onPointerDown);
 
@@ -224,14 +227,19 @@ async function start() {
         const duration = taps >= 3 ? 1800 : 720;
         const progress = Math.min(1, (now - activeStartedAt) / duration);
         const display = displays[activeIndex];
-        const strength = taps === 1 ? 0.05 : taps === 2 ? 0.1 : 0.15;
+        const strength = taps === 1 ? 0.08 : taps === 2 ? 0.14 : 0.22;
         display.egg.mesh.rotation.z = Math.sin(progress * Math.PI * 10) * strength * (1 - progress);
-        display.egg.mesh.scale.setScalar(0.78 * (1 + Math.sin(progress * Math.PI) * (0.025 * taps)));
+        display.egg.mesh.scale.setScalar(0.78 * (1 + Math.sin(progress * Math.PI) * (0.04 * taps)));
         applyCrackStage(display, taps, progress);
         const crackPulse = 0.9 + Math.sin(progress * Math.PI * 4) * 0.1;
         display.crack.material.opacity *= crackPulse;
         display.crackBranches.forEach((branch) => { branch.material.opacity *= crackPulse; });
         if (taps >= 3 && progress > 0.5) {
+          if (!crackSoundPlayed) {
+            crackSoundPlayed = true;
+            sound.playCrack();
+            navigator.vibrate?.([80, 35, 120]);
+          }
           const reveal = Math.min(1, (progress - 0.5) * 2);
           display.egg.material.opacity = 1 - reveal;
           display.pattern.material.opacity = 1 - reveal;
@@ -240,7 +248,7 @@ async function start() {
           display.nest.material.opacity = 1 - reveal;
           display.monster.mesh.visible = true;
           display.monster.material.opacity = reveal;
-          display.monster.mesh.scale.setScalar(0.2 + reveal * 0.9 + Math.sin(reveal * Math.PI) * 0.18);
+          display.monster.mesh.scale.setScalar(0.15 + reveal * 0.95 + Math.sin(reveal * Math.PI) * 0.32);
         }
         if (progress >= 1) {
           if (taps >= 3) {

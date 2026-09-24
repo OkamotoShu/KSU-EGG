@@ -11,6 +11,7 @@ const displays = [];
 let activeAction;
 let sharedSound;
 let focusDecoration;
+let ritualMessage;
 
 const notify = (status) => {
   if (!stopped) window.parent.postMessage({ type: "ksu-event-ar", status }, window.location.origin);
@@ -32,6 +33,7 @@ const stop = () => {
   });
   activeAction?.dispose();
   focusDecoration?.dispose();
+  ritualMessage?.dispose();
   interactions.forEach((interaction) => interaction.dispose());
   sharedSound?.close();
   textures.forEach((item) => item.dispose());
@@ -69,13 +71,14 @@ function getLayout(count) {
 
 async function start() {
   try {
-    const [THREE, { MindARThree }, { createCharacterAction }, { createEggInteraction }, { createSoundEffects }, { createFocusDecoration }] = await Promise.all([
+    const [THREE, { MindARThree }, { createCharacterAction }, { createEggInteraction }, { createSoundEffects }, { createFocusDecoration }, { createRitualMessage }] = await Promise.all([
       import("three"),
       import("/ar/vendor/mindar-image-three.prod.js"),
       import("/ar/character-action.mjs"),
       import("/ar/egg-interaction.mjs"),
       import("/ar/sound-effects.mjs"),
       import("/ar/focus-decoration.mjs"),
+      import("/ar/ritual-message.mjs"),
     ]);
     const params = new URLSearchParams(window.location.search);
     const characterType = [1, 2, 3].includes(Number(params.get("character"))) ? Number(params.get("character")) : 1;
@@ -141,6 +144,7 @@ async function start() {
     anchor.group.add(character);
     sharedSound = createSoundEffects(characterType);
     focusDecoration = createFocusDecoration({ THREE, scene: ar.scene, reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches });
+    ritualMessage = createRitualMessage({ THREE, container, camera: ar.camera });
 
     for (let index = 0; index < players.length; index++) {
       const player = players[index];
@@ -272,6 +276,7 @@ async function start() {
         restoreSharedCharacter();
       }
       approaching = null;
+      ritualMessage.hide();
       if (returning !== null) {
         returning = null;
         restoreSharedCharacter();
@@ -323,10 +328,21 @@ async function start() {
           activeStartedAt = now;
           activeAction.start(now);
           sharedSound.play();
+          navigator.vibrate?.(45);
+          const ritualPhrases = ["おおきくなあれ", "げんきにそだってね", "どんなこがでてくるかな", "そろそろうまれるかな"];
+          const speakerNames = ["", "ほしみ〜るちゃん", "むすぶくん", "神山くん"];
+          ritualMessage.show({
+            message: ritualPhrases[Math.floor(Math.random() * ritualPhrases.length)],
+            speaker: speakerNames[characterType],
+            target: group,
+            localPosition: new THREE.Vector3(0, 0.78, 0.18),
+            time: now,
+          });
           approaching = null;
         }
       }
       activeAction?.update(now);
+      ritualMessage.update(now);
       if (activeIndex !== null && activeStartedAt !== null && now - activeStartedAt >= 1850) {
         finishedEggs.add(activeIndex);
         displays[activeIndex].showAfter();

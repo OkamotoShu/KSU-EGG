@@ -131,6 +131,7 @@ async function start() {
       onTrigger: (time) => {
         characterAction.start(time);
         soundEffects.play();
+        navigator.vibrate?.(45);
       },
     });
     anchor.onTargetFound = () => notify("found");
