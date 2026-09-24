@@ -45,3 +45,7 @@ node_modules
 out
 dist
 .env*.local
+
+# ホスティング用の自動生成ファイル
+hosting/
+.firebase/
