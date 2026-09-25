@@ -159,12 +159,13 @@ export default function AboutPage() {
                                 </div>
                                 {/* 研究室のロゴ */}
                                 <div className="my-5 flex justify-center">
-                                    <Image
-                                        src={labLogo}
-                                        alt="研究室のロゴ"
-                                        sizes="(max-width: 320px) 70vw, 240px"
-                                        className="h-auto w-full max-w-[150px] object-contain"
-                                    />
+                <Image
+                  src={labLogo}
+                  alt="研究室のロゴ"
+                  unoptimized
+                  sizes="(max-width: 320px) 70vw, 240px"
+                  className="h-auto w-full max-w-[150px] object-contain"
+                />
                                 </div>
                             </dl>
                         </section>
