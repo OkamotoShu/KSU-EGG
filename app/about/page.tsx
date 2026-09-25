@@ -98,30 +98,73 @@ export default function AboutPage() {
                         </button>
 
                         {/* 同意状態に関係なく読める案内 */}
-                        <section
-                            aria-labelledby="about-information"
-                            className="rounded-3xl border border-[#18366B]/10 bg-white p-5"
-                        >
+                        <section aria-labelledby="about-information" className="rounded-3xl border border-[#18366B]/10 bg-white p-5">
                             <h2
-                                id="about-information"
-                                className="text-lg font-extrabold"
-                            >
-                                情報の取り扱い
+                                    id="consent-data"
+                                    className="text-base font-extrabold"
+                                >
+                                情報の取り扱いについて
                             </h2>
+                            <div className="mt-2 text-sm leading-7">
+                                <p className="font-bold mt-4">1．研究計画の概要に関する事項</p>
+                                <p className="mb-5">
+                                    本実験は、Webアプリケーションを用いた学内イベントを通じて、普段とは異なる行動目的を持つ人々（目的地へ一直線に向かう「目的遂行型」に対し、空間を回遊する「探索型」）が増加した際に、全体の人流にどのような特徴が現れるのかを調査することを目的としています。参加者の方には実際にWebアプリケーションに登録していただき、ご自身のペースでイベントに参加（学内の回遊など）していただきます。イベント中の移動ルートや参加・不参加は自由です。実験後は簡単なアンケートへの回答にご協力をお願いします。実験では、アプリケーションを通じた行動履歴（イベントの参加状況や移動の軌跡など）とアンケートの回答内容を実験データとして収集します。
+                                </p>
 
-                            <p className="mt-3 text-sm leading-7">
-                                ［取得する情報、利用目的、保存期間、
-                                削除の方法を記載してください。］
-                            </p>
+                                <p className="font-bold">2．個人情報保護の方法に関する事項</p>
+                                <p className="mb-5">
+                                    本実験は個人の能力や特定の行動を評価するものではなく、人々の行動原理の違いによって生じる人流の特徴を、取得したデータから客観的に読み取ることができるかを検証することを目的としています。収集した実験データは全て匿名化および統計処理を行い、個人が特定できない形で厳重に管理・分析します。実験データを学術論文や研究発表などで使用する場合においても、個人が特定できない形式でのみ使用します。
+                                </p>
 
-                            <h3 className="mt-5 text-sm font-extrabold">
-                                カメラについて
-                            </h3>
+                                <p className="font-bold">3．安全管理に関する事項</p>
+                                <p className="mb-5">
+                                    イベントへの参加・不参加は自由ですので、体調不良などを感じた場合は個人の判断でいつでも実験を中止してください。また、移動中のスマートフォン操作（歩きスマホ）は大変危険ですので、アプリケーションを操作する際は必ず安全な場所で立ち止まって行ってください。
+                                </p>
 
+                                <p className="font-bold">4．インフォームド・コンセントに関する事項</p>
+                                <ul className="mb-5">
+                                    <li className="before:content-['・'] ml-4 -indent-3.5">
+                                        本実験への参加は任意であり、強制するものではありません。また、実験中に中断を求める場合はいつでも申し出ることができます。
+                                    </li>
+                                    <li className="before:content-['・'] ml-4 -indent-3.5">
+                                        実験後、実験への同意を撤回する場合はいつでも申し出てください。得られた実験データ等を破棄します。また、このことにより不利益をこうむることはありません。
+                                    </li>
+                                    <li className="before:content-['・'] ml-4 -indent-3.5">
+                                        実験データの開示を請求された場合は開示します。
+                                    </li>
+                                    <li className="before:content-['・'] ml-4 -indent-3.5">
+                                        得られた実験データおよびアンケート結果は、本研究のためのみに使用し、第三者に譲渡しません。
+                                    </li>
+                                    <li className="before:content-['・'] ml-4 -indent-3.5">
+                                        本実験に関する研究成果は学会発表や論文発表等に使用する可能性があります。
+                                    </li>
+                                </ul>
+                            </div>
+                        </section>
+
+                        <section aria-labelledby="about-information" className="rounded-3xl border border-[#18366B]/10 bg-white p-5">
+                            <h2
+                                id="consent-camera"
+                                className="text-base font-extrabold"
+                            >
+                                カメラの利用について
+                            </h2>
                             <p className="mt-2 text-sm leading-7">
-                                QRコードを読み取るためにお手元のスマホのカメラ機能を使います。
-                                カメラが使えないときは、
-                                近くのスタッフに声をかけてください。
+                                QRコードの読み取りにカメラを使います。
+                                カメラが使えないときは、スタッフに声をかけてください。
+                            </p>
+                        </section>
+
+                        <section aria-labelledby="consent-safety">
+                            <h2
+                                id="consent-safety"
+                                className="text-base font-extrabold"
+                            >
+                                あそぶときのおねがい
+                            </h2>
+                            <p className="mt-2 text-sm leading-7">
+                                スマートフォンを見るときは、立ち止まってね。
+                                まわりに気をつけて、楽しくあそぼう！
                             </p>
                         </section>
 
@@ -145,7 +188,7 @@ export default function AboutPage() {
                                         制作
                                     </dt>
                                     <dd className="mt-1 leading-relaxed">
-                                        ［制作チーム名］
+                                        京都産業大学 情報理工学部 情報理工学科 棟方研究室
                                     </dd>
                                 </div>
 
@@ -154,7 +197,8 @@ export default function AboutPage() {
                                         お問い合わせ
                                     </dt>
                                     <dd className="mt-1 leading-relaxed">
-                                        ［問い合わせ先］
+                                        munekata.lab@gmail.com<br />
+                                        （担当者：岡本）
                                     </dd>
                                 </div>
                                 {/* 研究室のロゴ */}

@@ -130,7 +130,9 @@ function ConsentContent() {
                             お問い合わせ
                         </h2>
                         <p className="mt-2 text-sm leading-7">
-                            ［運営者名と問い合わせ先を記載してください。］
+                            京都産業大学 情報理工学部 情報理工学科 棟方研究室<br />
+                            munekata.lab@gmail.com<br />
+                            （担当者：岡本）
                         </p>
                     </section>
                 </div>
