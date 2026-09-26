@@ -177,14 +177,12 @@ export default function HatchPage() {
               </p>
               
               {/* target="_blank" で別タブでアンケート（Googleフォーム等）を開く */}
-              <a
-                href="https://forms.google.com/..." /* ←★ここに実際のアンケートURLを入れます */
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 flex min-h-12 w-full items-center justify-center rounded-2xl bg-[#269D9C] px-4 font-bold text-white shadow-sm transition active:scale-95"
+                <Link
+                href="/form"
+                className="flex min-h-12 w-full max-w-sm items-center justify-center rounded-full bg-[#269D9C] px-6 text-sm font-bold text-white shadow-sm transition hover:bg-[#1E7D7C] active:scale-95"
               >
-                アンケートに答える
-              </a>
+              アンケートに答える
+            </Link>
             </div>
           )}
           {/* ▲▲▲ ここまで ▲▲▲ */}
