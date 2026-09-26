@@ -22,7 +22,7 @@ export default function FormPage() {
   }, []);
 
   // ▼▼▼ GoogleフォームのURL設定 ▼▼▼
-  const baseUrl = "https://docs.google.com/forms/d/e/1FAIpQLScGMxK4RFHsuD4mwCHGJ628RMiMmqA1h0Ipc0fryWrPXFBE-w/viewform";
+  const baseUrl = "https://docs.google.com/forms/d/e/1FAIpQLScGMxK4RFHsuD4mwCHGJ628RMiMmqA1h0Ipc0fryWrPXFBE-w/viewform?usp=header";
   
   // ★ここにステップ1で調べたあなたの「質問ID」を入れます
   const entryId = "entry.1364895676"; 
